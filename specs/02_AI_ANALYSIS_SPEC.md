@@ -1,7 +1,7 @@
-# JobFinder — Part 2 of 4: Resume Analysis, Job Requirements, and Project Matching
+# GapMap — Part 2 of 4: Resume Analysis, Job Requirements, and Project Matching
 
 ## Codex assignment
-Implement structured input extraction and evidence mapping for the JobFinder MVP in `apps/api/services/analysis/` and related API routes owned by this workstream. Follow API/data contracts in Part 4. Never grade SQL or invent certifications. Integrate with the deterministic project registry (Part 3) by competency IDs.
+Implement structured input extraction and evidence mapping for the GapMap MVP in `apps/api/services/analysis/` and related API routes owned by this workstream. Follow API/data contracts in Part 4. Never grade SQL or invent certifications. Integrate with the deterministic project registry (Part 3) by competency IDs.
 
 ## Scope
 - Accept pasted resume and a job description; also support text-based PDF resume extraction (5 MB limit; no OCR required). If scanned/unreadable, show a clear error and offer paste fallback.

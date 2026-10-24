@@ -5,6 +5,9 @@ __pycache__/
 .coverage
 htmlcov/
 node_modules/
+.next/
+*.tsbuildinfo
+apps/web/public/pdf.worker.min.mjs
 .DS_Store
 .env
 .env.*

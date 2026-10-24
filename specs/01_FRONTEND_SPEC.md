@@ -1,7 +1,7 @@
-# JobFinder — Part 1 of 4: Frontend and User Experience
+# GapMap — Part 1 of 4: Frontend and User Experience
 
 ## Codex assignment
-Implement the web interface for the HackOHI/O JobFinder MVP. Work primarily in `apps/web/`. Follow the shared contract in Part 4. Do **not** implement backend analysis or grading logic in the browser. If backend endpoints are not ready, use clearly labeled fixture data via an adapter that can be replaced with real API calls.
+Implement the web interface for the HackOHI/O GapMap MVP. Work primarily in `apps/web/`. Follow the shared contract in Part 4. Do **not** implement backend analysis or grading logic in the browser. If backend endpoints are not ready, use clearly labeled fixture data via an adapter that can be replaced with real API calls.
 
 ## Product goal
 A student uploads or pastes a resume, pastes a specific software engineering internship posting, sees requirement-to-resume evidence, accepts a job-relevant mini-project, writes three SQL queries to debug an e-commerce revenue report, views deterministic test feedback, and sees evidence and next actions update.

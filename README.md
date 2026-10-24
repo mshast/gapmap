@@ -51,6 +51,17 @@ Then open:
 
 The development frontend may call the API from `http://localhost:3000` or `http://127.0.0.1:3000`.
 
+## Run the frontend
+
+The Next.js app lives in `apps/web/` and defaults to fixture-backed demo mode. Start it with:
+
+```bash
+npm install --prefix apps/web
+npm run dev --prefix apps/web
+```
+
+Open <http://localhost:3000>. To use the API for analysis, set `NEXT_PUBLIC_GAPMAP_MOCK=false` in `apps/web/.env.local`; set `GAPMAP_API_URL` if the API is not at `http://127.0.0.1:8000`. Project run and submit still require the Part 3 service, which currently returns 501.
+
 ## Environment variables
 
 None are required for the deterministic foundation. No external AI service runs in this phase.

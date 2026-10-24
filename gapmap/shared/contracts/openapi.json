@@ -1,0 +1,1016 @@
+{
+  "components": {
+    "schemas": {
+      "AnalysisResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "analysis_id": {
+            "format": "uuid",
+            "title": "Analysis Id",
+            "type": "string"
+          },
+          "recommended_project_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recommended Project Id"
+          },
+          "requirements": {
+            "items": {
+              "$ref": "#/components/schemas/Requirement"
+            },
+            "minItems": 1,
+            "title": "Requirements",
+            "type": "array"
+          },
+          "roadmap": {
+            "items": {
+              "$ref": "#/components/schemas/RoadmapItem"
+            },
+            "title": "Roadmap",
+            "type": "array"
+          },
+          "session_id": {
+            "format": "uuid",
+            "title": "Session Id",
+            "type": "string"
+          },
+          "target_role": {
+            "title": "Target Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "target_role",
+          "requirements",
+          "recommended_project_id",
+          "session_id",
+          "analysis_id"
+        ],
+        "title": "AnalysisResponse",
+        "type": "object"
+      },
+      "AnalyzeRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "job_description": {
+            "maxLength": 50000,
+            "minLength": 1,
+            "title": "Job Description",
+            "type": "string"
+          },
+          "resume_text": {
+            "maxLength": 50000,
+            "minLength": 1,
+            "title": "Resume Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "resume_text",
+          "job_description"
+        ],
+        "title": "AnalyzeRequest",
+        "type": "object"
+      },
+      "CompetencyEvidence": {
+        "additionalProperties": false,
+        "properties": {
+          "earned": {
+            "minimum": 0.0,
+            "title": "Earned",
+            "type": "integer"
+          },
+          "possible": {
+            "minimum": 0.0,
+            "title": "Possible",
+            "type": "integer"
+          },
+          "skill_id": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Skill Id",
+            "type": "string"
+          },
+          "source_project_id": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Source Project Id",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/EvidenceStatus"
+          }
+        },
+        "required": [
+          "skill_id",
+          "status",
+          "earned",
+          "possible",
+          "source_project_id"
+        ],
+        "title": "CompetencyEvidence",
+        "type": "object"
+      },
+      "CompetencyScore": {
+        "additionalProperties": false,
+        "properties": {
+          "earned": {
+            "minimum": 0.0,
+            "title": "Earned",
+            "type": "integer"
+          },
+          "possible": {
+            "minimum": 0.0,
+            "title": "Possible",
+            "type": "integer"
+          },
+          "skill_id": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Skill Id",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/EvidenceStatus"
+          }
+        },
+        "required": [
+          "skill_id",
+          "earned",
+          "possible",
+          "status"
+        ],
+        "title": "CompetencyScore",
+        "type": "object"
+      },
+      "DemoFixtureResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "job_description": {
+            "title": "Job Description",
+            "type": "string"
+          },
+          "resume_text": {
+            "title": "Resume Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "resume_text",
+          "job_description"
+        ],
+        "title": "DemoFixtureResponse",
+        "type": "object"
+      },
+      "EvidenceStatus": {
+        "enum": [
+          "unverified",
+          "resume_evidence",
+          "partially_demonstrated",
+          "demonstrated_on_project"
+        ],
+        "title": "EvidenceStatus",
+        "type": "string"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "HealthResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "HealthResponse",
+        "type": "object"
+      },
+      "ProjectRecommendationResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "project_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Id"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id",
+          "reason"
+        ],
+        "title": "ProjectRecommendationResponse",
+        "type": "object"
+      },
+      "ProjectResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "competencies": {
+            "items": {
+              "maxLength": 100,
+              "minLength": 1,
+              "type": "string"
+            },
+            "title": "Competencies",
+            "type": "array"
+          },
+          "id": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Id",
+            "type": "string"
+          },
+          "scenario": {
+            "title": "Scenario",
+            "type": "string"
+          },
+          "schema_text": {
+            "title": "Schema Text",
+            "type": "string"
+          },
+          "tasks": {
+            "items": {
+              "$ref": "#/components/schemas/ProjectTask"
+            },
+            "title": "Tasks",
+            "type": "array"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "scenario",
+          "schema_text",
+          "tasks",
+          "competencies"
+        ],
+        "title": "ProjectResponse",
+        "type": "object"
+      },
+      "ProjectTask": {
+        "additionalProperties": false,
+        "properties": {
+          "expected_columns": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Expected Columns",
+            "type": "array"
+          },
+          "id": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Id",
+            "type": "string"
+          },
+          "instructions": {
+            "title": "Instructions",
+            "type": "string"
+          },
+          "starter_sql": {
+            "title": "Starter Sql",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "instructions",
+          "expected_columns",
+          "starter_sql"
+        ],
+        "title": "ProjectTask",
+        "type": "object"
+      },
+      "PublicTestFeedback": {
+        "additionalProperties": false,
+        "properties": {
+          "explanation": {
+            "title": "Explanation",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "passed": {
+            "title": "Passed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "label",
+          "passed",
+          "explanation"
+        ],
+        "title": "PublicTestFeedback",
+        "type": "object"
+      },
+      "ReadinessResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "competency_evidence": {
+            "items": {
+              "$ref": "#/components/schemas/CompetencyEvidence"
+            },
+            "title": "Competency Evidence",
+            "type": "array"
+          },
+          "project_total": {
+            "$ref": "#/components/schemas/TaskScore"
+          },
+          "requirements": {
+            "items": {
+              "$ref": "#/components/schemas/Requirement"
+            },
+            "title": "Requirements",
+            "type": "array"
+          },
+          "roadmap": {
+            "items": {
+              "$ref": "#/components/schemas/RoadmapItem"
+            },
+            "title": "Roadmap",
+            "type": "array"
+          },
+          "session_id": {
+            "format": "uuid",
+            "title": "Session Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "requirements",
+          "competency_evidence",
+          "roadmap",
+          "project_total"
+        ],
+        "title": "ReadinessResponse",
+        "type": "object"
+      },
+      "Requirement": {
+        "additionalProperties": false,
+        "properties": {
+          "evidence_status": {
+            "$ref": "#/components/schemas/EvidenceStatus"
+          },
+          "id": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Id",
+            "type": "string"
+          },
+          "importance": {
+            "maximum": 3.0,
+            "minimum": 1.0,
+            "title": "Importance",
+            "type": "integer"
+          },
+          "job_quote": {
+            "title": "Job Quote",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "requirement_type": {
+            "$ref": "#/components/schemas/RequirementType"
+          },
+          "resume_quotes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Resume Quotes",
+            "type": "array"
+          },
+          "skill_ids": {
+            "items": {
+              "maxLength": 100,
+              "minLength": 1,
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Skill Ids",
+            "type": "array"
+          },
+          "uncovered_skill_ids": {
+            "items": {
+              "maxLength": 100,
+              "minLength": 1,
+              "type": "string"
+            },
+            "title": "Uncovered Skill Ids",
+            "type": "array"
+          },
+          "verification_capability": {
+            "$ref": "#/components/schemas/VerificationCapability"
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "job_quote",
+          "importance",
+          "requirement_type",
+          "skill_ids",
+          "evidence_status",
+          "verification_capability"
+        ],
+        "title": "Requirement",
+        "type": "object"
+      },
+      "RequirementType": {
+        "enum": [
+          "required",
+          "preferred"
+        ],
+        "title": "RequirementType",
+        "type": "string"
+      },
+      "RoadmapItem": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "title": "Action",
+            "type": "string"
+          },
+          "priority": {
+            "minimum": 1.0,
+            "title": "Priority",
+            "type": "integer"
+          },
+          "requirement_id": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Requirement Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "requirement_id",
+          "action",
+          "priority"
+        ],
+        "title": "RoadmapItem",
+        "type": "object"
+      },
+      "RunRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "format": "uuid",
+            "title": "Session Id",
+            "type": "string"
+          },
+          "sql": {
+            "maxLength": 10000,
+            "minLength": 1,
+            "title": "Sql",
+            "type": "string"
+          },
+          "task_id": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Task Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "task_id",
+          "sql"
+        ],
+        "title": "RunRequest",
+        "type": "object"
+      },
+      "RunResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "columns": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Columns",
+            "type": "array"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "rows": {
+            "items": {
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "truncated": {
+            "title": "Truncated",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "columns",
+          "rows",
+          "truncated",
+          "error"
+        ],
+        "title": "RunResponse",
+        "type": "object"
+      },
+      "SubmitRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "format": "uuid",
+            "title": "Session Id",
+            "type": "string"
+          },
+          "sql": {
+            "maxLength": 10000,
+            "minLength": 1,
+            "title": "Sql",
+            "type": "string"
+          },
+          "task_id": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Task Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "task_id",
+          "sql"
+        ],
+        "title": "SubmitRequest",
+        "type": "object"
+      },
+      "SubmitResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "competency_scores": {
+            "items": {
+              "$ref": "#/components/schemas/CompetencyScore"
+            },
+            "title": "Competency Scores",
+            "type": "array"
+          },
+          "public_test_feedback": {
+            "items": {
+              "$ref": "#/components/schemas/PublicTestFeedback"
+            },
+            "title": "Public Test Feedback",
+            "type": "array"
+          },
+          "submission_id": {
+            "format": "uuid",
+            "title": "Submission Id",
+            "type": "string"
+          },
+          "task_id": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Task Id",
+            "type": "string"
+          },
+          "task_score": {
+            "$ref": "#/components/schemas/TaskScore"
+          }
+        },
+        "required": [
+          "submission_id",
+          "task_id",
+          "task_score",
+          "competency_scores",
+          "public_test_feedback"
+        ],
+        "title": "SubmitResponse",
+        "type": "object"
+      },
+      "TaskScore": {
+        "additionalProperties": false,
+        "properties": {
+          "earned": {
+            "minimum": 0.0,
+            "title": "Earned",
+            "type": "integer"
+          },
+          "possible": {
+            "minimum": 0.0,
+            "title": "Possible",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "earned",
+          "possible"
+        ],
+        "title": "TaskScore",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      },
+      "VerificationCapability": {
+        "enum": [
+          "available",
+          "not_assessable"
+        ],
+        "title": "VerificationCapability",
+        "type": "string"
+      }
+    }
+  },
+  "info": {
+    "title": "GapMap API",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/analyze": {
+      "post": {
+        "operationId": "analyze_api_analyze_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalyzeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Analyze"
+      }
+    },
+    "/api/demo/fixture": {
+      "get": {
+        "operationId": "demo_fixture_api_demo_fixture_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DemoFixtureResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Demo Fixture"
+      }
+    },
+    "/api/health": {
+      "get": {
+        "operationId": "health_api_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Health"
+      }
+    },
+    "/api/projects/recommended": {
+      "get": {
+        "operationId": "recommended_project_api_projects_recommended_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "analysis_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Analysis Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectRecommendationResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Recommended Project"
+      }
+    },
+    "/api/projects/{project_id}": {
+      "get": {
+        "operationId": "get_project_api_projects__project_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Project"
+      }
+    },
+    "/api/projects/{project_id}/run": {
+      "post": {
+        "operationId": "run_project_api_projects__project_id__run_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Run Project"
+      }
+    },
+    "/api/projects/{project_id}/submit": {
+      "post": {
+        "operationId": "submit_project_api_projects__project_id__submit_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubmitResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Submit Project"
+      }
+    },
+    "/api/readiness": {
+      "get": {
+        "operationId": "readiness_api_readiness_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadinessResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Readiness"
+      }
+    }
+  }
+}

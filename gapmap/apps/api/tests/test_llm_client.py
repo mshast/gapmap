@@ -42,6 +42,19 @@ async def test_client_uses_strict_schema_and_isolates_untrusted_documents(extrac
     assert len(requests) == 1
 
 
+async def test_client_supports_groq_endpoint(extraction_result):
+    async def handler(request):
+        assert str(request.url) == "https://api.groq.com/openai/v1/chat/completions"
+        return httpx.Response(200, json=completion(extraction_result.model_dump_json()))
+
+    result = await StructuredLLMClient(
+        "test-only-key",
+        base_url="https://api.groq.com/openai/v1/chat/completions",
+        transport=httpx.MockTransport(handler),
+    ).extract("resume", "job")
+    assert result == extraction_result
+
+
 @pytest.mark.parametrize("case", [
     "bad_json", "missing_choices", "refusal", "truncated", "provider_401",
     "provider_429", "provider_500", "network", "extra_status", "oversized", "null_message",

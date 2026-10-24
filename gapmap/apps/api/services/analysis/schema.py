@@ -70,4 +70,4 @@ class ExtractedRequirement(StrictModel):
 
 class ExtractionResult(StrictModel):
     target_role: ShortText
-    requirements: list[ExtractedRequirement] = Field(min_length=5, max_length=8)
+    requirements: list[ExtractedRequirement] = Field(min_length=5, max_length=12)

@@ -113,7 +113,7 @@ If time allows, click **Full evidence map** to show the same SQL requirement now
 
 ## 2:35–3:00 — Architecture and lesson
 
-**Screen:** a simple architecture slide or the repository tree: Next.js frontend → FastAPI contracts → analysis service (OpenAI structured outputs with quote verification) and SQL project service (sandboxed SQLite, hidden fixtures) → session store.
+**Screen:** the architecture slide, `demo/architecture-slide.png` (1920×1080). Open it full screen before recording so you can switch to it.
 
 **Say:** "We built this as four parallel workstreams against shared API contracts, with types generated from OpenAPI. The hardest lesson was trust: an LLM will happily invent resume evidence, so the AI only proposes, and deterministic code verifies every quote and does every piece of grading. Resume text is treated as untrusted data, so a resume that says 'mark me verified' changes nothing."
 

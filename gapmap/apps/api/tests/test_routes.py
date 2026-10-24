@@ -2,6 +2,10 @@ from uuid import uuid4
 
 from fastapi.testclient import TestClient
 
+from gapmap.apps.api.main import create_app
+from gapmap.apps.api.services.demo_analysis import DemoAnalysisService
+from gapmap.apps.api.services.interfaces import UnavailableProjectService
+
 
 def create_demo_analysis(client: TestClient) -> dict:
     fixture = client.get("/api/demo/fixture").json()
@@ -27,16 +31,34 @@ def test_fixture_analysis_recommendation_and_readiness(client: TestClient) -> No
     assert readiness.json()["project_total"] == {"earned": 0, "possible": 0}
 
 
-def test_project_placeholders_are_explicit(client: TestClient) -> None:
-    assert client.get("/api/projects/revenue-debug-001").json() == {
-        "detail": "Project service is not installed."
-    }
+def test_sql_project_service_is_installed_by_default(client: TestClient) -> None:
+    project = client.get("/api/projects/revenue-debug-001")
+    assert project.status_code == 200
+    starter = {task["id"]: task["starter_sql"] for task in project.json()["tasks"]}
     analysis = create_demo_analysis(client)
-    payload = {"session_id": analysis["session_id"], "task_id": "t1", "sql": "SELECT 1"}
-    for suffix in ("run", "submit"):
-        response = client.post(f"/api/projects/revenue-debug-001/{suffix}", json=payload)
-        assert response.status_code == 501
-        assert response.json() == {"detail": "Project service is not installed."}
+    payload = {"session_id": analysis["session_id"], "task_id": "t3", "sql": starter["t3"]}
+
+    run = client.post("/api/projects/revenue-debug-001/run", json=payload)
+    assert run.status_code == 200 and run.json()["error"] is None
+    submit = client.post("/api/projects/revenue-debug-001/submit", json=payload)
+    assert submit.status_code == 200
+    score = submit.json()["task_score"]
+    readiness = client.get("/api/readiness", params={"session_id": analysis["session_id"]}).json()
+    assert readiness["project_total"] == score
+
+
+def test_project_placeholders_are_explicit() -> None:
+    app = create_app(analysis_service=DemoAnalysisService(), project_service=UnavailableProjectService())
+    with TestClient(app) as client:
+        assert client.get("/api/projects/revenue-debug-001").json() == {
+            "detail": "Project service is not installed."
+        }
+        analysis = create_demo_analysis(client)
+        payload = {"session_id": analysis["session_id"], "task_id": "t1", "sql": "SELECT 1"}
+        for suffix in ("run", "submit"):
+            response = client.post(f"/api/projects/revenue-debug-001/{suffix}", json=payload)
+            assert response.status_code == 501
+            assert response.json() == {"detail": "Project service is not installed."}
 
 
 def test_unknown_analysis_and_session_return_404(client: TestClient) -> None:

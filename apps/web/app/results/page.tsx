@@ -13,7 +13,7 @@ const skillLabels: Record<string, string> = {
   sql_joins: "Joins",
   sql_filtering: "Filtering",
   sql_aggregation: "Aggregation",
-  refund_edge_cases: "Refund edge cases",
+  sql_refund_edge_cases: "Refund edge cases",
 };
 
 export default function ResultsPage() {
@@ -81,7 +81,7 @@ export default function ResultsPage() {
 
           <section className="results-block competency-results">
             <div className="block-title"><div><p className="eyebrow">TESTED COMPETENCIES</p><h2>What this sample covered</h2></div><Target size={18} /></div>
-            {["sql_joins", "sql_filtering", "sql_aggregation", "refund_edge_cases"].map((skillId) => {
+            {["sql_joins", "sql_filtering", "sql_aggregation", "sql_refund_edge_cases"].map((skillId) => {
               const score = scoreBySkill.get(skillId);
               return <div className="competency-row" key={skillId}><span>{skillLabels[skillId]}</span>{score ? <><span className="competency-points">{score.earned} / {score.possible}</span><StatusPill status={score.status} /></> : <span className="not-submitted">Not assessed</span>}</div>;
             })}

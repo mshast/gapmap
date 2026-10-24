@@ -34,7 +34,7 @@ const demoProject: Project = {
     "The weekly revenue dashboard does not match finance. Trace the issue and build a trustworthy net revenue report.",
   schema_text:
     "customers(id, name, region)\norders(id, customer_id, amount_cents, status, created_at)\nrefunds(id, order_id, amount_cents)",
-  competencies: ["sql_joins", "sql_filtering", "sql_aggregation", "refund_edge_cases"],
+  competencies: ["sql_joins", "sql_filtering", "sql_aggregation", "sql_refund_edge_cases"],
   tasks: [
     {
       id: "t1",
@@ -178,6 +178,7 @@ export async function analyze(resumeText: string, jobDescription: string): Promi
       session_id: crypto.randomUUID(),
       analysis_id: crypto.randomUUID(),
       target_role: "Software Engineering Intern",
+      analysis_mode: "demo",
       recommended_project_id: demoProject.id,
       requirements: mockRequirements(resumeText),
       roadmap: [
@@ -247,7 +248,7 @@ export async function submitTask(
         { earned: 12, possible: 20, skill_id: "sql_filtering", status: "partially_demonstrated" as const },
         { earned: 4, possible: 25, skill_id: "sql_aggregation", status: "partially_demonstrated" as const },
       ],
-      [{ earned: 0, possible: 30, skill_id: "refund_edge_cases", status: "unverified" as const }],
+      [{ earned: 0, possible: 30, skill_id: "sql_refund_edge_cases", status: "unverified" as const }],
     ][Math.max(taskIndex, 0)];
     return {
       submission_id: crypto.randomUUID(),

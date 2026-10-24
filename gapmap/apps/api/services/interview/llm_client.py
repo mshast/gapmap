@@ -58,10 +58,12 @@ class InterviewLLMClient:
 
     def __init__(
         self, api_key: str, model: str = "gpt-4o-mini", *,
+        base_url: str = "https://api.openai.com/v1/chat/completions",
         transport: httpx.AsyncBaseTransport | None = None,
     ) -> None:
         self._api_key = api_key
         self._model = model
+        self._base_url = base_url
         self._transport = transport
 
     async def generate_questions(self, requirements: list[Requirement]) -> list[QuestionDraft]:
@@ -83,8 +85,9 @@ class InterviewLLMClient:
     ) -> ModelT:
         if not self._api_key.strip():
             raise InterviewUnavailableError(
-                "Interview practice is not configured. Set OPENAI_API_KEY on the server, "
-                "or set GAPMAP_DEMO_MODE=1 for the labeled demo fixture."
+                "Interview practice is not configured. Set OPENAI_API_KEY (or GROQ_API_KEY with "
+                "GAPMAP_LLM_PROVIDER=groq) on the server, or set GAPMAP_DEMO_MODE=1 for the "
+                "labeled demo fixture."
             )
         if sum(len(message["content"]) for message in messages) > 60_000:
             raise InterviewLLMError("The interview input exceeds the size limit.")
@@ -118,7 +121,7 @@ class InterviewLLMClient:
             transport=self._transport, follow_redirects=False,
         ) as client:
             response = await client.post(
-                "https://api.openai.com/v1/chat/completions",
+                self._base_url,
                 headers={"Authorization": f"Bearer {self._api_key}"}, json=payload,
             )
             response.raise_for_status()
@@ -276,8 +279,21 @@ def _short(sentence: str, max_words: int = 25, max_chars: int = 400) -> str | No
 
 
 def client_from_env() -> InterviewClient:
-    """Demo only when explicitly enabled; otherwise the live client, which errors without a key."""
+    """Demo only when explicitly enabled; otherwise the live client, which errors without a key.
+
+    Follows the analysis provider setting. Ollama is not supported here, so it
+    gets a keyless client whose error explains the configuration.
+    """
     if os.environ.get("GAPMAP_DEMO_MODE", "").lower() in {"1", "true", "yes"}:
         return DemoInterviewClient()
+    provider = os.environ.get("GAPMAP_LLM_PROVIDER", "openai").strip().lower()
+    if provider == "groq":
+        model = os.environ.get("GROQ_MODEL", "openai/gpt-oss-20b").strip() or "openai/gpt-oss-20b"
+        return InterviewLLMClient(
+            os.environ.get("GROQ_API_KEY", "").strip(), model,
+            base_url="https://api.groq.com/openai/v1/chat/completions",
+        )
+    if provider != "openai":
+        return InterviewLLMClient("", "unsupported")
     model = os.environ.get("OPENAI_MODEL", "gpt-4o-mini").strip() or "gpt-4o-mini"
     return InterviewLLMClient(os.environ.get("OPENAI_API_KEY", "").strip(), model)

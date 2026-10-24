@@ -12,7 +12,7 @@ export function PlanCard({ plan, action }: { plan: ProjectPlan; action?: ReactNo
   return (
     <article className={`plan-card${plan.runnable_project_id ? " plan-card-primary" : ""}`}>
       <div>
-        <span className="plan-label">{sourceLabels[plan.source]} · {planSkills(plan)}</span>
+        <span className="plan-label">{[sourceLabels[plan.source], planSkills(plan)].filter(Boolean).join(" · ")}</span>
         <h3>{plan.title}</h3>
         <p>{plan.why}</p>
         <p className="plan-deliverable"><b>You&apos;ll leave with:</b> {plan.deliverable}</p>

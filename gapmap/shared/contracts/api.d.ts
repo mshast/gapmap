@@ -72,6 +72,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/interview/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start Interview */
+        post: operations["start_interview_api_interview_start_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/interview/{interview_id}/answer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Answer Question */
+        post: operations["answer_question_api_interview__interview_id__answer_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/interview/{interview_id}/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Interview Summary */
+        get: operations["interview_summary_api_interview__interview_id__summary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/projects/recommended": {
         parameters: {
             query?: never;
@@ -197,6 +248,47 @@ export interface components {
             /** Resume Text */
             resume_text: string;
         };
+        /** AnswerFeedback */
+        AnswerFeedback: {
+            /**
+             * Disclaimer
+             * @default Practice feedback only. This is not a hiring prediction and does not change any verified skill evidence.
+             */
+            disclaimer: string;
+            /** Follow Up */
+            follow_up: string | null;
+            /** Follow Up Question Id */
+            follow_up_question_id: string | null;
+            /** Improvements */
+            improvements: string[];
+            /**
+             * Mode
+             * @enum {string}
+             */
+            mode: "llm" | "demo";
+            /** Question Id */
+            question_id: string;
+            /** Scores */
+            scores: components["schemas"]["CriterionScore"][];
+            /** Suggested Rewrite */
+            suggested_rewrite: string;
+        };
+        /** AnswerHighlight */
+        AnswerHighlight: {
+            /** Average */
+            average: number;
+            /** Question */
+            question: string;
+            /** Question Id */
+            question_id: string;
+        };
+        /** AnswerRequest */
+        AnswerRequest: {
+            /** Answer Text */
+            answer_text: string;
+            /** Question Id */
+            question_id: string;
+        };
         /** Body_analyze_pdf_api_analyze_pdf_post */
         Body_analyze_pdf_api_analyze_pdf_post: {
             /** Job Description */
@@ -230,6 +322,44 @@ export interface components {
             skill_id: string;
             status: components["schemas"]["EvidenceStatus"];
         };
+        /** CriterionAverage */
+        CriterionAverage: {
+            /** Answers Scored */
+            answers_scored: number;
+            /** Average */
+            average: number;
+            /**
+             * Criterion
+             * @enum {string}
+             */
+            criterion: "relevance" | "specificity" | "structure" | "impact" | "accuracy";
+            /**
+             * Max
+             * @default 4
+             * @constant
+             */
+            max: 4;
+        };
+        /** CriterionScore */
+        CriterionScore: {
+            /** Answer Quote */
+            answer_quote: string | null;
+            /** Comment */
+            comment: string;
+            /**
+             * Criterion
+             * @enum {string}
+             */
+            criterion: "relevance" | "specificity" | "structure" | "impact" | "accuracy";
+            /**
+             * Max
+             * @default 4
+             * @constant
+             */
+            max: 4;
+            /** Score */
+            score: number;
+        };
         /** DemoFixtureResponse */
         DemoFixtureResponse: {
             /** Job Description */
@@ -251,6 +381,50 @@ export interface components {
         HealthResponse: {
             /** Status */
             status: string;
+        };
+        /** InterviewQuestion */
+        InterviewQuestion: {
+            /** Grounding Quote */
+            grounding_quote: string;
+            /** Id */
+            id: string;
+            /** Question */
+            question: string;
+            /** Requirement Id */
+            requirement_id: string | null;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "behavioral" | "technical" | "gap_probe";
+        };
+        /** InterviewSummary */
+        InterviewSummary: {
+            /** Answered Count */
+            answered_count: number;
+            /** Criterion Averages */
+            criterion_averages: components["schemas"]["CriterionAverage"][];
+            /**
+             * Disclaimer
+             * @default Practice feedback only. This is not a hiring prediction and does not change any verified skill evidence.
+             */
+            disclaimer: string;
+            /**
+             * Interview Id
+             * Format: uuid
+             */
+            interview_id: string;
+            /**
+             * Mode
+             * @enum {string}
+             */
+            mode: "llm" | "demo";
+            /** Practice Suggestions */
+            practice_suggestions: string[];
+            strongest_answer: components["schemas"]["AnswerHighlight"];
+            /** Total Questions */
+            total_questions: number;
+            weakest_answer: components["schemas"]["AnswerHighlight"];
         };
         /** ProjectPlan */
         ProjectPlan: {
@@ -409,6 +583,39 @@ export interface components {
             rows: (number | string | null)[][];
             /** Truncated */
             truncated: boolean;
+        };
+        /** StartInterviewRequest */
+        StartInterviewRequest: {
+            /**
+             * Analysis Id
+             * Format: uuid
+             */
+            analysis_id: string;
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+        };
+        /** StartInterviewResponse */
+        StartInterviewResponse: {
+            /**
+             * Disclaimer
+             * @default Practice feedback only. This is not a hiring prediction and does not change any verified skill evidence.
+             */
+            disclaimer: string;
+            /**
+             * Interview Id
+             * Format: uuid
+             */
+            interview_id: string;
+            /**
+             * Mode
+             * @enum {string}
+             */
+            mode: "llm" | "demo";
+            /** Questions */
+            questions: components["schemas"]["InterviewQuestion"][];
         };
         /** SubmitRequest */
         SubmitRequest: {
@@ -569,6 +776,105 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HealthResponse"];
+                };
+            };
+        };
+    };
+    start_interview_api_interview_start_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StartInterviewRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StartInterviewResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    answer_question_api_interview__interview_id__answer_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                interview_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnswerRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnswerFeedback"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    interview_summary_api_interview__interview_id__summary_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                interview_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InterviewSummary"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

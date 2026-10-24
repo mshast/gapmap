@@ -16,6 +16,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     { href: "/", label: "Input" },
     { href: "/readiness", label: "Readiness" },
     { href: projectHref, label: "Projects" },
+    { href: "/interview", label: "Interview" },
     { href: "/results", label: "Results" },
   ];
   return (

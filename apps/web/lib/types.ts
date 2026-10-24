@@ -9,6 +9,21 @@ export type ProjectTask = components["schemas"]["ProjectTask"];
 export type RunResult = components["schemas"]["RunResponse"];
 export type Submission = components["schemas"]["SubmitResponse"];
 export type EvidenceStatus = components["schemas"]["EvidenceStatus"];
+export type InterviewStart = components["schemas"]["StartInterviewResponse"];
+export type InterviewQuestion = components["schemas"]["InterviewQuestion"];
+export type InterviewFeedback = components["schemas"]["AnswerFeedback"];
+export type InterviewSummary = components["schemas"]["InterviewSummary"];
+
+export type InterviewState = {
+  id: string;
+  mode: InterviewStart["mode"];
+  disclaimer: string;
+  // Main questions plus any follow-ups, in the order they were asked.
+  questions: InterviewQuestion[];
+  feedback: Record<string, InterviewFeedback>;
+  drafts: Record<string, string>;
+  summary: InterviewSummary | null;
+};
 
 export type AppState = {
   resumeText: string;
@@ -19,6 +34,7 @@ export type AppState = {
   previews: Record<string, RunResult>;
   submissions: Record<string, Submission>;
   readiness: Readiness | null;
+  interview: InterviewState | null;
 };
 
 export const initialState: AppState = {
@@ -30,4 +46,5 @@ export const initialState: AppState = {
   previews: {},
   submissions: {},
   readiness: null,
+  interview: null,
 };

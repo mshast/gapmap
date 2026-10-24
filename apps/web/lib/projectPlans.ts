@@ -27,7 +27,7 @@ const skillLabels: Record<string, string> = {
 export const skillLabel = (skill: string) => skillLabels[skill] ?? skill.replace(/_/g, " ");
 
 export const planSkills = (plan: ProjectPlan) =>
-  plan.skill_ids.filter((skill) => skill !== "other").map(skillLabel).join(" · ") || "Portfolio";
+  plan.skill_ids.filter((skill) => skill !== "other").map(skillLabel).join(" · ");
 
 export const isEligibility = (requirement: Requirement) => requirement.skill_ids.includes("eligibility");
 

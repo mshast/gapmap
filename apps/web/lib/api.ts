@@ -1,5 +1,8 @@
 import type {
   Analysis,
+  InterviewFeedback,
+  InterviewStart,
+  InterviewSummary,
   Project,
   Readiness,
   RunResult,
@@ -324,4 +327,29 @@ export async function submitTask(
 export async function getReadiness(sessionId: string): Promise<Readiness> {
   if (isMockMode) throw new Error("Mock readiness is derived from the saved demo session.");
   return request(`/api/readiness?session_id=${encodeURIComponent(sessionId)}`);
+}
+
+const interviewNeedsApi = "Interview practice needs the GapMap API. Start it (GAPMAP_DEMO_MODE=1 for the offline demo) and run the web app with NEXT_PUBLIC_GAPMAP_MOCK=false.";
+
+export async function startInterview(sessionId: string, analysisId: string): Promise<InterviewStart> {
+  if (isMockMode) throw new Error(interviewNeedsApi);
+  return request("/api/interview/start", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ session_id: sessionId, analysis_id: analysisId }),
+  });
+}
+
+export async function answerInterview(interviewId: string, questionId: string, answerText: string): Promise<InterviewFeedback> {
+  if (isMockMode) throw new Error(interviewNeedsApi);
+  return request(`/api/interview/${encodeURIComponent(interviewId)}/answer`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ question_id: questionId, answer_text: answerText }),
+  });
+}
+
+export async function getInterviewSummary(interviewId: string): Promise<InterviewSummary> {
+  if (isMockMode) throw new Error(interviewNeedsApi);
+  return request(`/api/interview/${encodeURIComponent(interviewId)}/summary`);
 }

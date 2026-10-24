@@ -1,3 +1,5 @@
+from uuid import uuid4
+
 import pytest
 
 from gapmap.apps.api.services.analysis.evidence import verified_excerpt
@@ -103,3 +105,19 @@ def test_accuracy_is_scored_only_for_technical_questions():
     technical = sanitize_scores(feedback_draft(), "An answer.", "gap_probe")
     assert "accuracy" not in {item.criterion for item in behavioral}
     assert "accuracy" in {item.criterion for item in technical}
+
+
+async def test_eligibility_requirements_are_not_interview_topics(make_service, requirements):
+    eligibility = requirements[0].model_copy(update={
+        "id": "req-eligibility-9", "label": "US work authorization", "skill_ids": ["eligibility"],
+        "job_quote": "Must be authorized to work in the United States.",
+    })
+
+    class Source:
+        def load_requirements(self, session_id, analysis_id):
+            return [eligibility, *requirements]
+
+    service = make_service(DemoInterviewClient())
+    service._analysis = Source()
+    started = await service.start(uuid4(), uuid4())
+    assert all(question.requirement_id != "req-eligibility-9" for question in started.questions)

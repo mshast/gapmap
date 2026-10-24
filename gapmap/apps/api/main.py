@@ -6,7 +6,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from gapmap.apps.api.errors import install_error_handlers
 from gapmap.apps.api.routes import router
 from gapmap.apps.api.services.analysis import StructuredAnalysisService
+<<<<<<< HEAD
 from gapmap.apps.api.services.interfaces import AnalysisService, ProjectService
+=======
+from gapmap.apps.api.services.interfaces import (
+    AnalysisService,
+    ProjectService,
+)
+>>>>>>> origin/master
 from gapmap.apps.api.services.projects.routes import SqlProjectService
 from gapmap.apps.api.session_store import InMemorySessionStore
 

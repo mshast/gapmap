@@ -7,6 +7,7 @@ import type {
 } from "@/lib/types";
 
 export const isMockMode = process.env.NEXT_PUBLIC_GAPMAP_MOCK !== "false";
+const apiBase = process.env.NEXT_PUBLIC_GAPMAP_API_URL ?? "";
 
 const demoResume = `Maya Chen
 Computer Science student
@@ -94,7 +95,7 @@ function errorMessage(body: unknown, fallback: string): string {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(path, init);
+  const response = await fetch(`${apiBase}${path}`, init);
   const body = await response.json().catch(() => null);
   if (!response.ok) throw new Error(errorMessage(body, "The request could not be completed. Try again."));
   return body as T;
@@ -112,6 +113,7 @@ const mockRequirements = (resume: string) => {
       requirement_type: "required" as const,
       skill_ids: ["sql_joins", "sql_filtering", "sql_aggregation"],
       resume_quotes: [],
+      resume_evidence: [],
       evidence_status: "unverified" as const,
       verification_capability: "available" as const,
       uncovered_skill_ids: [],
@@ -124,6 +126,7 @@ const mockRequirements = (resume: string) => {
       requirement_type: "required" as const,
       skill_ids: ["python"],
       resume_quotes: pythonQuote ? [pythonQuote] : [],
+      resume_evidence: pythonQuote ? [{ source_type: "resume_claim" as const, quote: pythonQuote, strength: "contextual" as const }] : [],
       evidence_status: pythonQuote ? ("resume_evidence" as const) : ("unverified" as const),
       verification_capability: "not_assessable" as const,
       uncovered_skill_ids: ["python"],
@@ -136,6 +139,7 @@ const mockRequirements = (resume: string) => {
       requirement_type: "preferred" as const,
       skill_ids: ["react"],
       resume_quotes: [],
+      resume_evidence: [],
       evidence_status: "unverified" as const,
       verification_capability: "not_assessable" as const,
       uncovered_skill_ids: ["react"],
@@ -148,6 +152,7 @@ const mockRequirements = (resume: string) => {
       requirement_type: "preferred" as const,
       skill_ids: ["docker"],
       resume_quotes: [],
+      resume_evidence: [],
       evidence_status: "unverified" as const,
       verification_capability: "not_assessable" as const,
       uncovered_skill_ids: ["docker"],
@@ -160,6 +165,7 @@ const mockRequirements = (resume: string) => {
       requirement_type: "preferred" as const,
       skill_ids: ["collaboration"],
       resume_quotes: teamworkQuote ? [teamworkQuote] : [],
+      resume_evidence: teamworkQuote ? [{ source_type: "resume_claim" as const, quote: teamworkQuote, strength: "contextual" as const }] : [],
       evidence_status: teamworkQuote ? ("resume_evidence" as const) : ("unverified" as const),
       verification_capability: "not_assessable" as const,
       uncovered_skill_ids: ["collaboration"],
@@ -177,6 +183,8 @@ export async function analyze(resumeText: string, jobDescription: string): Promi
     return {
       session_id: crypto.randomUUID(),
       analysis_id: crypto.randomUUID(),
+      analysis_mode: "demo",
+      warnings: ["Fixture mode: no AI service ran."],
       target_role: "Software Engineering Intern",
       analysis_mode: "demo",
       recommended_project_id: demoProject.id,
@@ -193,6 +201,13 @@ export async function analyze(resumeText: string, jobDescription: string): Promi
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ resume_text: resumeText, job_description: jobDescription }),
   });
+}
+
+export async function analyzePdf(file: File, jobDescription: string): Promise<Analysis> {
+  const body = new FormData();
+  body.append("resume_file", file);
+  body.append("job_description", jobDescription);
+  return request("/api/analyze/pdf", { method: "POST", body });
 }
 
 export async function getProject(projectId: string): Promise<Project> {
@@ -237,18 +252,28 @@ export async function submitTask(
   if (isMockMode) {
     const taskIndex = demoProject.tasks.findIndex((task) => task.id === taskId);
     const taskScores = [
-      { earned: 25, possible: 25 },
-      { earned: 16, possible: 20 },
-      { earned: 0, possible: 55 },
+      { earned: 35, possible: 35 },
+      { earned: 20, possible: 25 },
+      { earned: 0, possible: 40 },
     ];
     const score = taskScores[Math.max(taskIndex, 0)];
     const competencyScores = [
-      [{ earned: 25, possible: 25, skill_id: "sql_joins", status: "demonstrated_on_project" as const }],
       [
-        { earned: 12, possible: 20, skill_id: "sql_filtering", status: "partially_demonstrated" as const },
-        { earned: 4, possible: 25, skill_id: "sql_aggregation", status: "partially_demonstrated" as const },
+        { earned: 25, possible: 25, skill_id: "sql_joins", status: "demonstrated_on_project" as const },
+        { earned: 10, possible: 10, skill_id: "sql_filtering", status: "demonstrated_on_project" as const },
       ],
+      [
+        { earned: 10, possible: 10, skill_id: "sql_filtering", status: "demonstrated_on_project" as const },
+        { earned: 10, possible: 15, skill_id: "sql_aggregation", status: "partially_demonstrated" as const },
+      ],
+      [
+        { earned: 0, possible: 10, skill_id: "sql_aggregation", status: "unverified" as const },
+        { earned: 0, possible: 30, skill_id: "sql_refund_edge_cases", status: "unverified" as const },
+      ],
+<<<<<<< HEAD
       [{ earned: 0, possible: 30, skill_id: "sql_refund_edge_cases", status: "unverified" as const }],
+=======
+>>>>>>> origin/master
     ][Math.max(taskIndex, 0)];
     return {
       submission_id: crypto.randomUUID(),

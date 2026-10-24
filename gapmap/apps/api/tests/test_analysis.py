@@ -10,7 +10,9 @@ from gapmap.apps.api.contracts import (
 from gapmap.apps.api.fixtures.loader import load_demo_fixture
 from gapmap.apps.api.main import create_app
 from gapmap.apps.api.services.analysis import StructuredAnalysisService
-from gapmap.apps.api.services.analysis.evidence import normalize_whitespace, skills_in_text, verified_excerpt
+from gapmap.apps.api.services.analysis.evidence import (
+    match_resume_evidence, normalize_whitespace, skills_in_text, verified_excerpt,
+)
 from gapmap.apps.api.services.analysis.llm_client import ExtractionError
 from gapmap.apps.api.services.analysis.matcher import build_roadmap
 from gapmap.apps.api.services.analysis.schema import ExtractionResult, SkillID
@@ -31,6 +33,12 @@ class FakeExtractor:
 
 def by_skill(result, skill):
     return next(item for item in result.requirements if skill in item.skill_ids)
+
+
+def test_extraction_schema_accepts_more_than_eight_requirements(extraction_result):
+    data = extraction_result.model_dump()
+    data["requirements"] = data["requirements"] + data["requirements"]
+    assert len(ExtractionResult.model_validate(data).requirements) == 10
 
 
 async def test_canonical_demo_has_five_grounded_requirements_and_honest_evidence():
@@ -60,6 +68,17 @@ async def test_contextual_sql_claim_is_self_reported_only():
     assert sql.resume_evidence[0].source_type == "resume_claim"
     assert sql.resume_evidence[0].strength == "contextual"
     assert all(item.evidence_status != "demonstrated_on_project" for item in result.requirements)
+
+
+def test_expected_graduation_date_matches_posting_window():
+    evidence = match_resume_evidence(
+        ["Expected Graduation: May 2028"],
+        "Education\nBA Computer Science\nExpected Graduation: May 2028",
+        ["other"],
+        "BA/BS Graduation Year: Spring/Summer 2028. No Masters/PhD",
+    )
+    assert [item.quote for item in evidence] == ["Expected Graduation: May 2028"]
+    assert evidence[0].strength == "contextual"
 
 
 async def test_standalone_sql_keyword_is_only_weak_evidence():

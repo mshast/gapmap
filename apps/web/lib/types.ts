@@ -1,4 +1,5 @@
 import type { components } from "../../../gapmap/shared/contracts/api";
+import type { PracticeRun } from "@/lib/pythonPractice";
 
 export type Analysis = components["schemas"]["AnalysisResponse"];
 export type Requirement = components["schemas"]["Requirement"];
@@ -35,6 +36,8 @@ export type AppState = {
   submissions: Record<string, Submission>;
   readiness: Readiness | null;
   interview: InterviewState | null;
+  // Self-checked Python practice, keyed by task id. Never sent to the API.
+  practice: Record<string, { code: string; run: PracticeRun | null }>;
 };
 
 export const initialState: AppState = {
@@ -47,4 +50,5 @@ export const initialState: AppState = {
   submissions: {},
   readiness: null,
   interview: null,
+  practice: {},
 };

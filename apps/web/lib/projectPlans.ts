@@ -29,6 +29,9 @@ export const skillLabel = (skill: string) => skillLabels[skill] ?? skill.replace
 export const planSkills = (plan: ProjectPlan) =>
   plan.skill_ids.filter((skill) => skill !== "other").map(skillLabel).join(" · ");
 
+// Plans with a self-checked practice exercise in the browser.
+export const practiceHref = (plan: ProjectPlan) => (plan.skill_ids.includes("python") ? "/practice/python" : null);
+
 export const isEligibility = (requirement: Requirement) => requirement.skill_ids.includes("eligibility");
 
 const gapFactor = (requirement: Requirement) => (requirement.evidence_status === "unverified" ? 2 : 1);

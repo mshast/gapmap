@@ -354,3 +354,7 @@ h3 { font-size: 15px; line-height: 1.35; }
   .interview-highlights { grid-template-columns: 1fr; }
   .interview-question { font-size: 16px !important; }
 }
+
+/* Python practice */
+.practice-pass { flex: none; margin-top: 2px; color: var(--forest); }
+.practice-fail { flex: none; margin-top: 2px; color: var(--rust); }

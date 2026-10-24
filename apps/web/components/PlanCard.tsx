@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
-import { planSkills } from "@/lib/projectPlans";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
+import { planSkills, practiceHref } from "@/lib/projectPlans";
 import type { ProjectPlan } from "@/lib/types";
 
 const sourceLabels: Record<ProjectPlan["source"], string> = {
@@ -9,6 +11,7 @@ const sourceLabels: Record<ProjectPlan["source"], string> = {
 };
 
 export function PlanCard({ plan, action }: { plan: ProjectPlan; action?: ReactNode }) {
+  const practice = practiceHref(plan);
   return (
     <article className={`plan-card${plan.runnable_project_id ? " plan-card-primary" : ""}`}>
       <div>
@@ -19,7 +22,7 @@ export function PlanCard({ plan, action }: { plan: ProjectPlan; action?: ReactNo
         <ol>{plan.steps.map((step) => <li key={step}>{step}</li>)}</ol>
         {plan.source === "ai_suggested" && <p className="plan-note">Suggested by AI for this posting. Not reviewed or graded by GapMap.</p>}
       </div>
-      {action}
+      {action || (practice && <Link className="button button-outline" href={practice}>Try the self-checked exercise <ArrowRight size={15} /></Link>)}
     </article>
   );
 }

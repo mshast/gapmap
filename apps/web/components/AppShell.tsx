@@ -1,0 +1,46 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Compass, FlaskConical } from "lucide-react";
+import { isMockMode } from "@/lib/api";
+
+const links = [
+  { href: "/", label: "Input" },
+  { href: "/readiness", label: "Readiness" },
+  { href: "/project/revenue-debug-001", label: "Project" },
+  { href: "/results", label: "Results" },
+];
+
+export function AppShell({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  return (
+    <div className="app-frame">
+      <header className="topbar">
+        <Link className="brand" href="/" aria-label="GapMap home">
+          <span className="brand-mark"><Compass size={19} strokeWidth={2.2} /></span>
+          <span>gapmap<span className="brand-period">.</span></span>
+        </Link>
+        <nav className="main-nav" aria-label="Main navigation">
+          {links.map((link, index) => {
+            const active = link.href === "/" ? pathname === "/" : pathname.startsWith(link.href.split("/").slice(0, 2).join("/"));
+            return (
+              <Link key={link.href} className={`nav-link${active ? " active" : ""}`} href={link.href}>
+                <span className="nav-index">0{index + 1}</span>{link.label}
+              </Link>
+            );
+          })}
+        </nav>
+        <div className={`mode-chip${isMockMode ? " mock" : " live"}`}>
+          {isMockMode ? <FlaskConical size={14} /> : <span className="live-dot" />}
+          {isMockMode ? "Demo fixtures" : "API connected"}
+        </div>
+      </header>
+      <main>{children}</main>
+      <footer className="footer-note">
+        <span>GapMap · Evidence, not odds.</span>
+        <span>Resume claims are not test results.</span>
+      </footer>
+    </div>
+  );
+}

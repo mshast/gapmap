@@ -1,11 +1,11 @@
-# JobFinder — Part 4 of 4: Shared Contracts, Integration, Testing, and HackOHI/O Delivery
+# GapMap — Part 4 of 4: Shared Contracts, Integration, Testing, and HackOHI/O Delivery
 
 ## Codex assignment
 You are integration lead. Own `apps/api/main.py`, shared contract/schema definitions, session state, end-to-end tests, fixtures coordination, README, deployment, and demo preparation. Coordinate with Parts 1–3; avoid rewriting their internal modules. Establish shared API shapes **first** so all four workstreams can proceed in parallel.
 
 ## Monorepo layout
 ```
-jobfinder/
+gapmap/
   apps/web/                 # Part 1 Next.js
   apps/api/main.py          # Part 4 FastAPI entrypoint
   apps/api/services/analysis/   # Part 2

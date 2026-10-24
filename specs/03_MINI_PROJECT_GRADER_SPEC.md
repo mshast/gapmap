@@ -1,4 +1,4 @@
-# JobFinder — Part 3 of 4: Mini-Project Registry, SQL Execution, and Deterministic Grader
+# GapMap — Part 3 of 4: Mini-Project Registry, SQL Execution, and Deterministic Grader
 
 ## Codex assignment
 Build the technical centerpiece in `apps/api/services/projects/`: one realistic three-step SQL revenue-debugging mini-project with real query execution, hidden fixtures, competency-scored grading, and robust failure handling. Obey Part 4 API/data contracts. Do not allow an LLM to decide pass/fail or run arbitrary Python code.

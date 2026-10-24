@@ -1,0 +1,10 @@
+{
+  "name": "gapmap-contracts",
+  "private": true,
+  "scripts": {
+    "contracts": "bash scripts/generate_contracts.sh"
+  },
+  "devDependencies": {
+    "openapi-typescript": "7.4.2"
+  }
+}

@@ -1,0 +1,9 @@
+Maya Chen
+Computer Science student
+
+Projects
+- Built a Python service that validates campus event data and produces weekly reports.
+- Collaborated with three classmates to test and document the service.
+
+Skills
+- Python, Git, testing, technical writing

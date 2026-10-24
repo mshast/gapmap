@@ -3,6 +3,8 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
+from gapmap.apps.api.services.analysis.pdf_extract import PDFInputError
+
 from gapmap.apps.api.services.interfaces import (
     AnalysisUnavailableError,
     CapabilityUnavailableError,
@@ -10,6 +12,10 @@ from gapmap.apps.api.services.interfaces import (
 
 
 def install_error_handlers(application: FastAPI) -> None:
+    @application.exception_handler(PDFInputError)
+    async def pdf_input_error(request: Request, exc: PDFInputError) -> JSONResponse:
+        return JSONResponse(status_code=exc.status_code, content={"detail": exc.public_message})
+
     @application.exception_handler(AnalysisUnavailableError)
     async def analysis_unavailable(
         request: Request, exc: AnalysisUnavailableError

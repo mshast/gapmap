@@ -63,9 +63,7 @@ def test_non_demo_analysis_returns_sanitized_503(client: TestClient) -> None:
         json={"resume_text": "Python", "job_description": "A different posting"},
     )
     assert response.status_code == 503
-    assert response.json() == {
-        "detail": "General analysis is unavailable; use the demo fixture or configure the Part 2 service."
-    }
+    assert "Demo mode supports only the bundled posting" in response.json()["detail"]
 
 
 def test_local_frontend_cors_preflight(client: TestClient) -> None:

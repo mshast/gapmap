@@ -9,6 +9,15 @@
             "title": "Analysis Id",
             "type": "string"
           },
+          "analysis_mode": {
+            "default": "demo",
+            "enum": [
+              "llm",
+              "demo"
+            ],
+            "title": "Analysis Mode",
+            "type": "string"
+          },
           "recommended_project_id": {
             "anyOf": [
               {
@@ -43,6 +52,13 @@
           "target_role": {
             "title": "Target Role",
             "type": "string"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Warnings",
+            "type": "array"
           }
         },
         "required": [
@@ -76,6 +92,28 @@
           "job_description"
         ],
         "title": "AnalyzeRequest",
+        "type": "object"
+      },
+      "Body_analyze_pdf_api_analyze_pdf_post": {
+        "properties": {
+          "job_description": {
+            "maxLength": 50000,
+            "minLength": 1,
+            "title": "Job Description",
+            "type": "string"
+          },
+          "resume_file": {
+            "description": "Text-based resume PDF, at most 5 MB; no OCR",
+            "format": "binary",
+            "title": "Resume File",
+            "type": "string"
+          }
+        },
+        "required": [
+          "resume_file",
+          "job_description"
+        ],
+        "title": "Body_analyze_pdf_api_analyze_pdf_post",
         "type": "object"
       },
       "CompetencyEvidence": {
@@ -415,6 +453,13 @@
           "requirement_type": {
             "$ref": "#/components/schemas/RequirementType"
           },
+          "resume_evidence": {
+            "items": {
+              "$ref": "#/components/schemas/ResumeEvidence"
+            },
+            "title": "Resume Evidence",
+            "type": "array"
+          },
           "resume_quotes": {
             "items": {
               "type": "string"
@@ -465,6 +510,35 @@
         ],
         "title": "RequirementType",
         "type": "string"
+      },
+      "ResumeEvidence": {
+        "additionalProperties": false,
+        "properties": {
+          "quote": {
+            "title": "Quote",
+            "type": "string"
+          },
+          "source_type": {
+            "const": "resume_claim",
+            "default": "resume_claim",
+            "title": "Source Type",
+            "type": "string"
+          },
+          "strength": {
+            "enum": [
+              "contextual",
+              "keyword_only"
+            ],
+            "title": "Strength",
+            "type": "string"
+          }
+        },
+        "required": [
+          "quote",
+          "strength"
+        ],
+        "title": "ResumeEvidence",
+        "type": "object"
       },
       "RoadmapItem": {
         "additionalProperties": false,
@@ -757,6 +831,44 @@
           }
         },
         "summary": "Analyze"
+      }
+    },
+    "/api/analyze/pdf": {
+      "post": {
+        "operationId": "analyze_pdf_api_analyze_pdf_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_analyze_pdf_api_analyze_pdf_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Analyze Pdf"
       }
     },
     "/api/demo/fixture": {

@@ -29,7 +29,7 @@ class CapabilityUnavailableError(PublicServiceError):
 
 
 class AnalysisService(Protocol):
-    async def analyze(self, resume_text: str, job_description: str) -> AnalysisDraft: ...
+    async def analyze(self, resume_text: str, job_text: str) -> AnalysisDraft: ...
 
 
 class ProjectService(Protocol):

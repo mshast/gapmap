@@ -1,7 +1,7 @@
 """Canonical public contracts for the GapMap API."""
 
 from enum import StrEnum
-from typing import Annotated
+from typing import Annotated, Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
@@ -46,6 +46,12 @@ class DemoFixtureResponse(StrictModel):
     job_description: str
 
 
+class ResumeEvidence(StrictModel):
+    source_type: Literal["resume_claim"] = "resume_claim"
+    quote: str
+    strength: Literal["contextual", "keyword_only"]
+
+
 class Requirement(StrictModel):
     id: Identifier
     label: str
@@ -54,6 +60,7 @@ class Requirement(StrictModel):
     requirement_type: RequirementType
     skill_ids: list[Identifier] = Field(min_length=1)
     resume_quotes: list[str] = Field(default_factory=list)
+    resume_evidence: list[ResumeEvidence] = Field(default_factory=list)
     evidence_status: EvidenceStatus
     verification_capability: VerificationCapability
     uncovered_skill_ids: list[Identifier] = Field(default_factory=list)
@@ -70,6 +77,8 @@ class AnalysisDraft(StrictModel):
     requirements: list[Requirement] = Field(min_length=1)
     recommended_project_id: str | None
     roadmap: list[RoadmapItem] = Field(default_factory=list)
+    analysis_mode: Literal["llm", "demo"] = "demo"
+    warnings: list[str] = Field(default_factory=list)
 
 
 class AnalysisResponse(AnalysisDraft):

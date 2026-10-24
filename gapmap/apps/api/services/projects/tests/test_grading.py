@@ -7,6 +7,7 @@ from fastapi.testclient import TestClient
 
 from gapmap.apps.api.contracts import EvidenceStatus
 from gapmap.apps.api.main import create_app
+from gapmap.apps.api.services.demo_analysis import DemoAnalysisService
 from gapmap.apps.api.services.projects.executor import execute_query
 from gapmap.apps.api.services.projects.fixtures import HIDDEN_FIXTURES, PUBLIC_FIXTURE
 from gapmap.apps.api.services.projects.grading import (
@@ -315,7 +316,10 @@ def test_grading_is_deterministic() -> None:
 
 @pytest.fixture
 def client() -> TestClient:
-    with TestClient(create_app(project_service=SqlProjectService())) as test_client:
+    # Pin the deterministic demo analysis so these tests do not depend on
+    # OPENAI_API_KEY or GAPMAP_DEMO_MODE being set.
+    app = create_app(analysis_service=DemoAnalysisService(), project_service=SqlProjectService())
+    with TestClient(app) as test_client:
         yield test_client
 
 

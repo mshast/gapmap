@@ -227,6 +227,25 @@ def test_each_execution_uses_a_fresh_database() -> None:
     assert first.rows == second.rows == [[len(PUBLIC_FIXTURE.orders)]]
 
 
+@pytest.mark.parametrize(
+    "sql",
+    [
+        "SELECT CAST(floor(amount_cents / 100.0) AS INTEGER), ceil(1.5), mod(7, 3) FROM orders",
+        "SELECT pow(2, 3), sqrt(16), log10(100), trunc(1.7), pi()",
+        "SELECT char(65), unicode('A'), hex('a'), quote(region), octet_length(name) FROM customers",
+        "SELECT timediff(MAX(created_at), MIN(created_at)) FROM orders",
+    ],
+)
+def test_common_pure_functions_allowed(sql: str) -> None:
+    result = run(sql)
+    assert result.error is None, result.error
+
+
+@pytest.mark.parametrize("sql", ["SELECT random()", "SELECT randomblob(16)"])
+def test_nondeterministic_functions_rejected(sql: str) -> None:
+    assert_rejected(sql)
+
+
 def test_blob_and_non_finite_values_are_json_safe() -> None:
     result = run("SELECT x'00ff', 1e999")
     assert result.error is None

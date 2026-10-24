@@ -41,14 +41,20 @@ ALLOWED_FUNCTIONS = frozenset(
         "cume_dist", "dense_rank", "first_value", "lag", "last_value", "lead",
         "nth_value", "ntile", "percent_rank", "rank", "row_number",
         # Scalars.
-        "abs", "coalesce", "concat", "concat_ws", "format", "glob", "ifnull", "iif",
-        "instr", "length", "like", "lower", "ltrim", "max", "min", "nullif",
-        "printf", "replace", "round", "rtrim", "sign", "substr", "substring",
-        "trim", "typeof", "upper",
+        "abs", "char", "coalesce", "concat", "concat_ws", "format", "glob", "hex",
+        "ifnull", "iif", "instr", "length", "like", "likelihood", "likely", "lower",
+        "ltrim", "max", "min", "nullif", "octet_length", "printf", "quote", "replace",
+        "round", "rtrim", "sign", "substr", "substring", "trim", "typeof", "unicode",
+        "unlikely", "upper",
+        # Math.
+        "ceil", "ceiling", "exp", "floor", "ln", "log", "log10", "log2", "mod", "pi",
+        "pow", "power", "sqrt", "trunc",
         # Dates.
-        "date", "datetime", "julianday", "strftime", "time", "unixepoch",
+        "date", "datetime", "julianday", "strftime", "time", "timediff", "unixepoch",
     }
 )
+# Deliberately excluded: random/randomblob (nondeterministic), zeroblob (memory),
+# load_extension, and anything that reads or changes connection state.
 _ALLOWED_ACTIONS = frozenset({sqlite3.SQLITE_SELECT, sqlite3.SQLITE_RECURSIVE})
 # Statement keywords other than SELECT/WITH; used only to word the rejection.
 _SQL_COMMANDS = frozenset(

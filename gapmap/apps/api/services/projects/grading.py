@@ -234,7 +234,9 @@ def compare_output(
             f"got {', '.join(result.columns) or 'none'}.",
         )
     if result.truncated:
-        return Comparison(False, "The query returned far more rows than expected.")
+        return Comparison(
+            False, f"The query returned more than the {MAX_GRADING_ROWS:,}-row grading limit."
+        )
 
     positions = [names.index(column) for column in expected_columns]
     actual = [
@@ -242,10 +244,10 @@ def compare_output(
     ]
     wanted = list(expected)
 
-    if len(actual) > len(wanted):
-        return Comparison(False, "The query returned too many rows.")
-    if len(actual) < len(wanted):
-        return Comparison(False, "The query returned too few rows.")
+    # One message for both directions so feedback does not reveal whether the
+    # hidden result has more or fewer rows.
+    if len(actual) != len(wanted):
+        return Comparison(False, "The query returned the wrong number of rows.")
     if actual == wanted:
         return Comparison(True, "Passed.")
     if sorted(actual, key=repr) == sorted(wanted, key=repr):

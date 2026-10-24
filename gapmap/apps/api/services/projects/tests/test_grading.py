@@ -294,6 +294,20 @@ def test_wrong_column_names_fail_with_column_diagnostic() -> None:
     assert all("Expected columns" in item.explanation for item in result.public_test_feedback)
 
 
+def test_row_count_feedback_does_not_reveal_direction() -> None:
+    extra = REFERENCE["t1"].replace("WHERE o.status = 'completed'", "")
+    missing = REFERENCE["t1"].replace("ORDER BY o.id", "ORDER BY o.id LIMIT 1")
+    filter_test = next(t for t in HIDDEN_TESTS if t.id == "t1-filter-status")
+    explanations = []
+    for sql in (extra, missing):
+        feedback = {item.label: item for item in grade("t1", sql).public_test_feedback}
+        explanations.append(feedback[filter_test.label].explanation)
+    assert explanations[0] == explanations[1]
+    assert "wrong number of rows" in explanations[0]
+    for word in ("many", "few", "more", "fewer", "less"):
+        assert word not in explanations[0].lower()
+
+
 def test_competency_status_rules() -> None:
     assert competency_status(3, 3) is EvidenceStatus.DEMONSTRATED_ON_PROJECT
     assert competency_status(1, 3) is EvidenceStatus.PARTIALLY_DEMONSTRATED

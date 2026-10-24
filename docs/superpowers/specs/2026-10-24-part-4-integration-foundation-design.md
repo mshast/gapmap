@@ -2,7 +2,7 @@
 
 ## Goal
 
-Build the contract-first backend foundation for JobFinder so the frontend, analysis, and SQL project workstreams can integrate against stable APIs without Part 4 taking ownership of their internal implementations.
+Build the contract-first backend foundation for GapMap so the frontend, analysis, and SQL project workstreams can integrate against stable APIs without Part 4 taking ownership of their internal implementations.
 
 ## Scope
 
@@ -12,9 +12,9 @@ The foundation provides working health, fixture, analysis, project recommendatio
 
 ## Architecture
 
-The application uses an app factory in `jobfinder/apps/api/main.py`. The factory constructs shared state, injects service adapters, configures development CORS, and mounts all routes under `/api`. Imports remain side-effect-light so tests can create isolated applications.
+The application uses an app factory in `gapmap/apps/api/main.py`. The factory constructs shared state, injects service adapters, configures development CORS, and mounts all routes under `/api`. Imports remain side-effect-light so tests can create isolated applications.
 
-Canonical request and response models live in `jobfinder/apps/api/contracts.py`. Route handlers, tests, and generated artifacts all derive from those models. The checked-in OpenAPI snapshot is the machine-readable contract, while generated TypeScript declarations under `jobfinder/shared/contracts/` give the frontend stable names without copying interfaces by hand.
+Canonical request and response models live in `gapmap/apps/api/contracts.py`. Route handlers, tests, and generated artifacts all derive from those models. The checked-in OpenAPI snapshot is the machine-readable contract, while generated TypeScript declarations under `gapmap/shared/contracts/` give the frontend stable names without copying interfaces by hand.
 
 Analysis and project behavior sit behind narrow Python protocols. The initial analysis adapter recognizes only the canonical demo fixture and is clearly identified as deterministic demo behavior. It returns grounded quotes copied from the fixture and never claims that an AI provider ran. Part 2 can replace this adapter through dependency injection. The project adapter exposes recommendation lookup now; Part 3 can supply project metadata, execution, and grading later without changing HTTP shapes.
 

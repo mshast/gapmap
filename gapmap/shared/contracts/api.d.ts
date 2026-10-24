@@ -21,6 +21,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/analyze/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Analyze Pdf */
+        post: operations["analyze_pdf_api_analyze_pdf_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/demo/fixture": {
         parameters: {
             query?: never;
@@ -151,6 +168,12 @@ export interface components {
              * Format: uuid
              */
             analysis_id: string;
+            /**
+             * Analysis Mode
+             * @default demo
+             * @enum {string}
+             */
+            analysis_mode: "llm" | "demo";
             /** Recommended Project Id */
             recommended_project_id: string | null;
             /** Requirements */
@@ -164,6 +187,8 @@ export interface components {
             session_id: string;
             /** Target Role */
             target_role: string;
+            /** Warnings */
+            warnings?: string[];
         };
         /** AnalyzeRequest */
         AnalyzeRequest: {
@@ -171,6 +196,17 @@ export interface components {
             job_description: string;
             /** Resume Text */
             resume_text: string;
+        };
+        /** Body_analyze_pdf_api_analyze_pdf_post */
+        Body_analyze_pdf_api_analyze_pdf_post: {
+            /** Job Description */
+            job_description: string;
+            /**
+             * Resume File
+             * Format: binary
+             * @description Text-based resume PDF, at most 5 MB; no OCR
+             */
+            resume_file: string;
         };
         /** CompetencyEvidence */
         CompetencyEvidence: {
@@ -287,6 +323,8 @@ export interface components {
             /** Label */
             label: string;
             requirement_type: components["schemas"]["RequirementType"];
+            /** Resume Evidence */
+            resume_evidence?: components["schemas"]["ResumeEvidence"][];
             /** Resume Quotes */
             resume_quotes?: string[];
             /** Skill Ids */
@@ -300,6 +338,22 @@ export interface components {
          * @enum {string}
          */
         RequirementType: "required" | "preferred";
+        /** ResumeEvidence */
+        ResumeEvidence: {
+            /** Quote */
+            quote: string;
+            /**
+             * Source Type
+             * @default resume_claim
+             * @constant
+             */
+            source_type: "resume_claim";
+            /**
+             * Strength
+             * @enum {string}
+             */
+            strength: "contextual" | "keyword_only";
+        };
         /** RoadmapItem */
         RoadmapItem: {
             /** Action */
@@ -399,6 +453,39 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["AnalyzeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnalysisResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    analyze_pdf_api_analyze_pdf_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_analyze_pdf_api_analyze_pdf_post"];
             };
         };
         responses: {

@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from gapmap.apps.api.errors import install_error_handlers
 from gapmap.apps.api.routes import router
-from gapmap.apps.api.services.demo_analysis import DemoAnalysisService
+from gapmap.apps.api.services.analysis import StructuredAnalysisService
 from gapmap.apps.api.services.interfaces import (
     AnalysisService,
     ProjectService,
@@ -21,7 +21,9 @@ def create_app(
     session_store: InMemorySessionStore | None = None,
 ) -> FastAPI:
     application = FastAPI(title="GapMap API", version="0.1.0")
-    application.state.analysis_service = analysis_service or DemoAnalysisService()
+    application.state.analysis_service = (
+        analysis_service if analysis_service is not None else StructuredAnalysisService.from_env()
+    )
     application.state.project_service = project_service or UnavailableProjectService()
     application.state.session_store = session_store or InMemorySessionStore()
     application.add_middleware(

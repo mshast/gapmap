@@ -265,14 +265,14 @@ def _band(value: int, thresholds: tuple[int, int, int]) -> int:
     return 1 + sum(value >= threshold for threshold in thresholds)
 
 
-def _short(sentence: str, max_words: int = 25) -> str | None:
-    # Cut at a word boundary inside the original text so the quote stays verbatim.
+def _short(sentence: str, max_words: int = 25, max_chars: int = 400) -> str | None:
+    # Cut a prefix of the original text so the quote stays verbatim.
     if not sentence:
         return None
     matches = list(re.finditer(r"\S+", sentence))
     if len(matches) > max_words:
         sentence = sentence[: matches[max_words - 1].end()]
-    return sentence
+    return sentence[:max_chars].rstrip()
 
 
 def client_from_env() -> InterviewClient:

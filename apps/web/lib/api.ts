@@ -178,8 +178,14 @@ export async function getDemoFixture(): Promise<{ resume_text: string; job_descr
   return request("/api/demo/fixture");
 }
 
+const sameText = (a: string, b: string) => a.split(/\s+/).join(" ").trim() === b.split(/\s+/).join(" ").trim();
+
 export async function analyze(resumeText: string, jobDescription: string): Promise<Analysis> {
   if (isMockMode) {
+    // Fixtures describe only the example posting; never pass them off as an analysis of another one.
+    if (!sameText(jobDescription, demoJob)) {
+      throw new Error("Demo mode only analyzes the example posting. To analyze your own, run the API and start the web app with NEXT_PUBLIC_GAPMAP_MOCK=false.");
+    }
     return {
       session_id: crypto.randomUUID(),
       analysis_id: crypto.randomUUID(),

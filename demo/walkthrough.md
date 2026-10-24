@@ -1,33 +1,128 @@
-# GapMap Three-Minute Demo Walkthrough
+# GapMap Three-Minute Demo Script
 
-This walkthrough covers the Part 4 foundation and Part 2 analysis. Frontend and SQL execution/grading remain owned by Parts 1 and 3.
+A screen-recording script for the live web app backed by the real API. The timings follow the outline in `specs/04_INTEGRATION_AND_DELIVERY_SPEC.md`. Each scene lists what to do on screen and a suggested voiceover.
+
+This script requires the SQL project service in the live API (PR #7, `wire-part3-service`). Without it, the Project page cannot run or grade SQL.
+
+## Before recording
+
+1. Start the API in deterministic demo mode from the repository root:
+
+   ```bash
+   # macOS / Linux
+   GAPMAP_DEMO_MODE=1 .venv/bin/python -m uvicorn gapmap.apps.api.main:app --port 8000
+   # Windows (PowerShell)
+   $env:GAPMAP_DEMO_MODE="1"; .venv\Scripts\python -m uvicorn gapmap.apps.api.main:app --port 8000
+   ```
+
+2. Start the web app against the API (not the mock fixtures):
+
+   ```bash
+   # macOS / Linux
+   NEXT_PUBLIC_GAPMAP_MOCK=false npm run dev --prefix apps/web
+   # Windows (PowerShell)
+   $env:NEXT_PUBLIC_GAPMAP_MOCK="false"; npm run dev --prefix apps/web
+   ```
+
+3. Open <http://localhost:3000> in a fresh incognito window. The app saves its session in `localStorage`, and the API keeps sessions only in memory, so restart the API and use a new window before every take. The top-right chip must read **API connected**, not "Demo fixtures".
+4. Zoom the browser to about 110–125% so text is readable in the video.
+5. Keep the three queries below in a text file to paste. Typing them on camera takes too long. Monaco may show autocomplete popups, so press `Esc` before clicking Submit.
+
+**T1: completed orders with regions (35/35)**
+
+```sql
+SELECT o.id AS order_id, COALESCE(NULLIF(c.region, ''), 'Unknown') AS region, o.amount_cents
+FROM orders o JOIN customers c ON c.id = o.customer_id
+WHERE o.status = 'completed'
+ORDER BY o.id
+```
+
+**T2: gross revenue by region (25/25)**
+
+```sql
+SELECT COALESCE(NULLIF(c.region, ''), 'Unknown') AS region, SUM(o.amount_cents) AS gross_revenue_cents
+FROM orders o JOIN customers c ON c.id = o.customer_id
+WHERE o.status = 'completed'
+GROUP BY 1 ORDER BY 1
+```
+
+**T3 corrected: net revenue after refunds (40/40)**
+
+```sql
+WITH refund_totals AS (
+  SELECT order_id, SUM(amount_cents) AS refund_cents FROM refunds GROUP BY order_id
+)
+SELECT COALESCE(NULLIF(c.region, ''), 'Unknown') AS region,
+       SUM(o.amount_cents - COALESCE(r.refund_cents, 0)) AS net_revenue_cents
+FROM orders o
+JOIN customers c ON c.id = o.customer_id
+LEFT JOIN refund_totals r ON r.order_id = o.id
+WHERE o.status = 'completed'
+GROUP BY 1 ORDER BY 1
+```
+
+The wrong T3 query is the editor's starter code (the "current dashboard query"), so it needs no preparation. Leaving out the `'Unknown'` handling in the corrected query scores 35/40, not 40/40.
 
 ## 0:00–0:20 — Problem
 
-Students often know that a role asks for skills they have not yet demonstrated, but a keyword match does not explain what evidence is missing. GapMap traces requirements to the posting and recommends a focused work sample instead of claiming a job-fit percentage.
+**Screen:** the Input page, empty.
+
+**Say:** "Students applying for internships can see the skills a posting asks for, but a resume keyword isn't proof, and a job-fit percentage doesn't tell you what to do next. GapMap traces each requirement back to the posting, separates resume claims from tested evidence, and gives you one focused work sample to close the gap."
 
 ## 0:20–0:45 — Inputs
 
-Show `demo/resume.txt` and `demo/job-description.txt`. Call out that the resume includes Python project experience but no SQL claim. Run with `GAPMAP_DEMO_MODE=1` for a labeled, deterministic recording; explain that live structured extraction requires a server API key and that text-PDF uploads are also supported.
+**Screen:** click **Load demo example**. Scroll through both boxes.
 
-## 0:45–1:05 — Traceable gaps
+**Say:** "Here's a CS student, Maya, applying for a software engineering internship. Her resume shows a Python project and teamwork, but it never mentions SQL, and the posting says SQL is required. For a repeatable recording we're running the API in demo mode, which uses a fixed extraction for this posting. In live mode, OpenAI structured outputs extract the requirements, and the server verifies every quote."
 
-Submit the fixture to `POST /api/analyze`. Show five traceable requirements, the exact SQL/React/Docker quotes, and `analysis_mode: demo`. SQL begins `unverified`; Python has self-reported `resume_evidence`; React and Docker have `verification_capability: not_assessable` because the initial mini-project cannot test them.
+The UI does not show when demo mode is on, so say it out loud to avoid implying an AI call that didn't happen.
 
-## 1:05–1:35 — Recommended project
+**Screen:** click **Analyze evidence**.
 
-Show `GET /api/projects/recommended` returning `revenue-debug-001` because it assesses the required SQL skills. Until Part 3 integrates, project detail, run, and submit routes intentionally return `501 Project service is not installed.`
+## 0:45–1:05 — Traced gaps
 
-## 1:35–2:10 — Failing then passing SQL assessment
+**Screen:** the Readiness page. Hover over the SQL row, then the Python row, then React or Docker.
 
-After Part 3 integration, run the incorrect T3 query that double-counts orders with multiple refunds, show safe public feedback, then run the corrected query. Do not record this segment until the real deterministic grader and hidden fixtures are connected.
+**Say:** "Five requirements, each quoted directly from the posting. SQL is required and not yet verified. Note that we say 'no supporting quote found,' not 'you lack the skill.' Python has a resume claim, quoted word for word, but a claim is still self-reported. React and Docker are honest gaps: we have no project that can test them, and we say so."
 
-## 2:10–2:35 — Evidence and roadmap
+## 1:05–1:35 — Personalized project
 
-Show `GET /api/readiness`. The current foundation recomputes readiness from the latest successful task attempt, prevents retry scores from accumulating, requires all mapped assessable SQL subskills for full demonstration, and never transfers SQL evidence to React or Docker.
+**Screen:** scroll down and click **Start project**. Show the scenario and schema briefly. Paste T1 and click **Submit for evaluation** (35/35). Paste T2 and submit (25/25).
+
+**Say:** "Because SQL is the required gap we can test, GapMap recommends a short work sample: debug an e-commerce revenue report. These queries run on the server in a locked-down, read-only SQLite sandbox and are graded against hidden test data. The first two tasks join orders to regions and compute gross revenue."
+
+## 1:35–2:10 — Failing, then passing
+
+**Screen:** open task **03**. Leave the starter "current dashboard query" in place and click **Submit for evaluation**. Scroll to the feedback: **22 / 40**, "Orders with several refunds are not double-counted" fails, with its hint.
+
+**Say:** "Task three is the real bug. The current dashboard query joins refunds directly, so an order with two refunds gets counted twice. The grader catches it with a hidden case and explains why, without revealing the answer."
+
+**Screen:** select all in the editor, paste the corrected T3 query, press `Esc`, and submit. All 7 cases pass, **40 / 40**.
+
+**Say:** "Aggregate refunds per order first, then join, and every hidden case passes."
+
+The T3 sidebar shows a checkmark after the failing submission too. It means "submitted", not "passed", so don't point at it.
+
+## 2:10–2:35 — Changed evidence and roadmap
+
+**Screen:** click **View results**. Show the points plate (**100 / 100**) and **What this sample covered** (all four competencies demonstrated on project). Scroll to **Requirement evidence trail**, then **Keep building evidence**.
+
+**Say:** "SQL moves from 'not yet verified' to 'demonstrated on project', backed by graded results rather than a claim. React and Docker don't change, because a SQL project can't prove them. The roadmap moves on to the next gaps. This covers one narrow work sample. It is not a hiring prediction."
+
+If time allows, click **Full evidence map** to show the same SQL requirement now marked demonstrated on the Readiness page, which refreshes from `/api/readiness`.
 
 ## 2:35–3:00 — Architecture and lesson
 
-Show the FastAPI contract layer, replaceable analysis/project service interfaces, generated TypeScript declarations, and session store. Explain that stable contracts let the four workstreams proceed independently, while explicit capability gaps keep the demo honest.
+**Screen:** a simple architecture slide or the repository tree: Next.js frontend → FastAPI contracts → analysis service (OpenAI structured outputs with quote verification) and SQL project service (sandboxed SQLite, hidden fixtures) → session store.
 
-Project results evidence narrow SQL competencies from this work sample; GapMap does not predict employability or job-placement odds.
+**Say:** "We built this as four parallel workstreams against shared API contracts, with types generated from OpenAPI. The hardest lesson was trust: an LLM will happily invent resume evidence, so the AI only proposes, and deterministic code verifies every quote and does every piece of grading. Resume text is treated as untrusted data, so a resume that says 'mark me verified' changes nothing."
+
+Make only claims the build supports. Do not cite user impact numbers or accuracy rates, and do not suggest that GapMap predicts employability or placement odds.
+
+## Known issues on the current build
+
+These came up during a full live click-through and are worth fixing before the final take:
+
+- **Task sidebar checkmarks mean "submitted"**, so a failing T3 submission is also checked.
+- **The UI never shows `analysis_mode` or the analysis `warnings`**, so a demo-mode run looks the same as a live AI run.
+- **Resume quotes show the resume's leading `- ` bullet** (for example, `“- Built a Python service…”`). This is cosmetic.

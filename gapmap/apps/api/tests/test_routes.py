@@ -18,6 +18,16 @@ def test_health(client: TestClient) -> None:
     assert client.get("/api/health").json() == {"status": "ok"}
 
 
+def test_interview_route_is_installed(client: TestClient) -> None:
+    response = client.get(
+        "/api/interview/00000000-0000-0000-0000-000000000000/summary"
+    )
+    assert response.status_code == 404
+    assert response.json() == {"detail": "Interview not found."}
+    operations = create_app().openapi()["paths"]["/api/interview/{interview_id}/summary"]
+    assert list(operations) == ["get"]
+
+
 def test_fixture_analysis_recommendation_and_readiness(client: TestClient) -> None:
     analysis = create_demo_analysis(client)
     recommended = client.get(

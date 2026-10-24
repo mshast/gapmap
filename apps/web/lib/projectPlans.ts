@@ -46,7 +46,7 @@ function planFor(requirement: Requirement): ProjectPlan | null {
     : requirement.skill_ids;
   if (skills.some((skill) => sqlSkills.has(skill))) {
     return {
-      id: "revenue-debug-001",
+      id: `gap-${requirement.id}`,
       title: "Investigate an E-commerce Revenue Bug",
       skills: skills.filter((skill) => sqlSkills.has(skill)),
       why: `Targets the role's ${requirement.label.toLowerCase()} requirement with a graded SQL investigation.`,
@@ -80,4 +80,8 @@ export function plansForRequirements(requirements: Requirement[], excludeDemonst
       seen.add(plan.id);
       return true;
     });
+}
+
+export function findPlan(requirements: Requirement[], planId: string) {
+  return plansForRequirements(requirements, false).find((plan) => plan.id === planId);
 }

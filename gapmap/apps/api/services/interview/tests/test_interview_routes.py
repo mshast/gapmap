@@ -13,7 +13,7 @@ from gapmap.apps.api.services.interview.llm_client import (
 )
 from gapmap.apps.api.services.interview.routes import router
 from gapmap.apps.api.services.interview.schema import DISCLAIMER
-from gapmap.apps.api.services.interview.tests.fakes import FakeClient, feedback_draft
+from gapmap.apps.api.services.interview.tests.fakes import FakeClient, completion, feedback_draft
 
 
 UNKNOWN = "00000000-0000-0000-0000-000000000000"
@@ -89,11 +89,62 @@ def test_missing_api_key_is_a_clear_error_and_never_calls_the_provider(make_api,
 
 
 def test_environment_selects_demo_only_when_enabled(monkeypatch):
+    monkeypatch.delenv("GAPMAP_LLM_PROVIDER", raising=False)
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     monkeypatch.delenv("GAPMAP_DEMO_MODE", raising=False)
     assert isinstance(client_from_env(), InterviewLLMClient)  # errors on use, never silent demo
     monkeypatch.setenv("GAPMAP_DEMO_MODE", "1")
     assert isinstance(client_from_env(), DemoInterviewClient)
+
+
+def test_environment_selects_groq(monkeypatch):
+    monkeypatch.setenv("GAPMAP_LLM_PROVIDER", "groq")
+    monkeypatch.setenv("GROQ_API_KEY", "groq-test-key")
+    monkeypatch.setenv("GROQ_MODEL", "openai/gpt-oss-20b")
+    monkeypatch.delenv("GAPMAP_DEMO_MODE", raising=False)
+
+    client = client_from_env()
+
+    assert isinstance(client, InterviewLLMClient)
+    assert client._base_url == "https://api.groq.com/openai/v1/chat/completions"
+    assert client._model == "openai/gpt-oss-20b"
+
+
+@pytest.mark.asyncio
+async def test_groq_client_posts_to_configured_endpoint_with_auth_and_model(valid_questions):
+    requests = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        body = {"questions": [item.model_dump() for item in valid_questions]}
+        return httpx.Response(200, json=completion(json.dumps(body)))
+
+    client = InterviewLLMClient(
+        "groq-test-key",
+        "openai/gpt-oss-20b",
+        base_url="https://api.groq.com/openai/v1/chat/completions",
+        key_name="GROQ_API_KEY",
+        transport=httpx.MockTransport(handler),
+    )
+    await client.generate_questions([])
+
+    assert str(requests[0].url) == "https://api.groq.com/openai/v1/chat/completions"
+    assert requests[0].headers["authorization"] == "Bearer groq-test-key"
+    assert json.loads(requests[0].content)["model"] == "openai/gpt-oss-20b"
+
+
+def test_environment_selects_explicit_demo_provider(monkeypatch):
+    monkeypatch.setenv("GAPMAP_LLM_PROVIDER", "demo")
+    monkeypatch.delenv("GAPMAP_DEMO_MODE", raising=False)
+    assert isinstance(client_from_env(), DemoInterviewClient)
+
+
+def test_groq_missing_api_key_names_the_required_key(make_api, analyzed):
+    client, _ = make_api(InterviewLLMClient("", key_name="GROQ_API_KEY"))
+    with client:
+        response = client.post("/api/interview/start", json=analyzed(client))
+    assert response.status_code == 503
+    assert "GROQ_API_KEY" in response.json()["detail"]
 
 
 def test_demo_mode_is_labeled_everywhere(make_api, analyzed):
@@ -171,6 +222,18 @@ def test_state_and_lookup_errors(make_api, analyzed):
         assert answer(client, interview_id, "q1", "An answer.").status_code == 200
         assert answer(client, interview_id, "q1", "Again.").status_code == 409
         assert client.get(f"/api/interview/{UNKNOWN}/summary").status_code == 404
+
+
+def test_interview_rejects_analysis_owned_by_another_session(make_api, analyzed):
+    client, _ = make_api(DemoInterviewClient())
+    with client:
+        first = analyzed(client)
+        second = analyzed(client)
+        response = client.post("/api/interview/start", json={
+            "session_id": first["session_id"],
+            "analysis_id": second["analysis_id"],
+        })
+    assert response.status_code == 404
 
 
 def test_router_without_service_reports_not_installed():

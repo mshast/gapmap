@@ -63,6 +63,16 @@ class InMemorySessionStore:
             )
             return ProjectRecommendationResponse(project_id=project_id, reason=reason)
 
+    def requirements_for(
+        self, session_id: UUID, analysis_id: UUID,
+    ) -> list[Requirement] | None:
+        with self._lock:
+            session = self._sessions.get(session_id)
+            if session is None or session.analysis.analysis_id != analysis_id:
+                return None
+            readiness = self.readiness_for(session_id)
+            return readiness.requirements if readiness is not None else None
+
     def record_submission(
         self,
         session_id: UUID,

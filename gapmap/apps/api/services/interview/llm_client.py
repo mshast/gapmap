@@ -57,11 +57,18 @@ class InterviewLLMClient:
     mode: InterviewMode = "llm"
 
     def __init__(
-        self, api_key: str, model: str = "gpt-4o-mini", *,
+        self,
+        api_key: str,
+        model: str = "gpt-4o-mini",
+        *,
+        base_url: str = "https://api.openai.com/v1/chat/completions",
+        key_name: str = "OPENAI_API_KEY",
         transport: httpx.AsyncBaseTransport | None = None,
     ) -> None:
         self._api_key = api_key
         self._model = model
+        self._base_url = base_url
+        self._key_name = key_name
         self._transport = transport
 
     async def generate_questions(self, requirements: list[Requirement]) -> list[QuestionDraft]:
@@ -83,7 +90,7 @@ class InterviewLLMClient:
     ) -> ModelT:
         if not self._api_key.strip():
             raise InterviewUnavailableError(
-                "Interview practice is not configured. Set OPENAI_API_KEY on the server, "
+                f"Interview practice is not configured. Set {self._key_name} on the server, "
                 "or set GAPMAP_DEMO_MODE=1 for the labeled demo fixture."
             )
         if sum(len(message["content"]) for message in messages) > 60_000:
@@ -118,7 +125,7 @@ class InterviewLLMClient:
             transport=self._transport, follow_redirects=False,
         ) as client:
             response = await client.post(
-                "https://api.openai.com/v1/chat/completions",
+                self._base_url,
                 headers={"Authorization": f"Bearer {self._api_key}"}, json=payload,
             )
             response.raise_for_status()
@@ -279,5 +286,21 @@ def client_from_env() -> InterviewClient:
     """Demo only when explicitly enabled; otherwise the live client, which errors without a key."""
     if os.environ.get("GAPMAP_DEMO_MODE", "").lower() in {"1", "true", "yes"}:
         return DemoInterviewClient()
-    model = os.environ.get("OPENAI_MODEL", "gpt-4o-mini").strip() or "gpt-4o-mini"
-    return InterviewLLMClient(os.environ.get("OPENAI_API_KEY", "").strip(), model)
+    provider = os.environ.get("GAPMAP_LLM_PROVIDER", "openai").strip().lower()
+    if provider == "demo":
+        return DemoInterviewClient()
+    if provider == "groq":
+        model = os.environ.get("GROQ_MODEL", "openai/gpt-oss-20b").strip() or "openai/gpt-oss-20b"
+        return InterviewLLMClient(
+            os.environ.get("GROQ_API_KEY", "").strip(),
+            model,
+            base_url="https://api.groq.com/openai/v1/chat/completions",
+            key_name="GROQ_API_KEY",
+        )
+    if provider == "openai":
+        model = os.environ.get("OPENAI_MODEL", "gpt-4o-mini").strip() or "gpt-4o-mini"
+        return InterviewLLMClient(os.environ.get("OPENAI_API_KEY", "").strip(), model)
+    if provider == "ollama":
+        # shortcut: interviews need hosted structured output; add Ollama only if its schema support is verified.
+        return InterviewLLMClient("", key_name="GROQ_API_KEY or OPENAI_API_KEY")
+    raise ValueError(f"Unsupported GAPMAP_LLM_PROVIDER for interviews: {provider}")

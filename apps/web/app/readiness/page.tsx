@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowRight, BadgeCheck, CircleHelp, LoaderCircle, LockKeyhole } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { StatusPill } from "@/components/StatusPill";
 import { useAppState } from "@/components/AppStateProvider";
-import { getProject, isMockMode } from "@/lib/api";
+import { getProject, getReadiness, isMockMode } from "@/lib/api";
 
 export default function ReadinessPage() {
   const router = useRouter();
@@ -15,9 +15,21 @@ export default function ReadinessPage() {
   const [loadingProject, setLoadingProject] = useState(false);
   const [error, setError] = useState("");
   const analysis = state.analysis;
-  const requirements = analysis?.requirements ?? [];
+  // Prefer server readiness: it includes graded project results for this session.
+  const readiness = state.readiness?.session_id === analysis?.session_id ? state.readiness : null;
+  const requirements = readiness?.requirements ?? analysis?.requirements ?? [];
   const evidencedCount = requirements.filter((item) => item.evidence_status !== "unverified").length;
+  const testedCount = requirements.filter((item) => item.evidence_status === "partially_demonstrated" || item.evidence_status === "demonstrated_on_project").length;
   const assessable = requirements.some((item) => item.verification_capability === "available");
+
+  useEffect(() => {
+    if (!hydrated || isMockMode || !analysis?.session_id) return;
+    let active = true;
+    getReadiness(analysis.session_id)
+      .then((latest) => { if (active) setState((current) => ({ ...current, readiness: latest })); })
+      .catch((caught: unknown) => { if (active) setError(caught instanceof Error ? caught.message : "Readiness could not be refreshed."); });
+    return () => { active = false; };
+  }, [analysis?.session_id, hydrated, setState]);
 
   async function startProject() {
     if (!analysis?.recommended_project_id) return;
@@ -48,7 +60,7 @@ export default function ReadinessPage() {
           </div>
           <div className="evidence-counter">
             <span className="counter-value">{evidencedCount}<span> / {requirements.length}</span></span>
-            <span className="counter-label">requirements with resume evidence</span>
+            <span className="counter-label">{testedCount ? `requirements with evidence · ${testedCount} tested on project` : "requirements with resume evidence"}</span>
           </div>
         </div>
 

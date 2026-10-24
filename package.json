@@ -2,7 +2,11 @@
   "name": "gapmap-contracts",
   "private": true,
   "scripts": {
-    "contracts": "bash scripts/generate_contracts.sh"
+    "contracts": "bash scripts/generate_contracts.sh",
+    "demo": ".venv/bin/python scripts/run_demo.py",
+    "smoke": ".venv/bin/python scripts/smoke_demo.py",
+    "test": ".venv/bin/python -m pytest",
+    "test:e2e": "npm run test:e2e --prefix apps/web"
   },
   "devDependencies": {
     "openapi-typescript": "7.4.2"

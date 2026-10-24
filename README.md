@@ -1,6 +1,22 @@
 # GapMap
 
-GapMap turns traceable internship requirements into an evidence-building roadmap. Part 2 now adds structured resume/job extraction, grounded resume claims, text-PDF uploads, fixed SQL project matching, and deterministic next actions to the Part 4 API foundation.
+GapMap turns one internship posting into a plan to build evidence: trace requirements to source quotes, complete a real SQL work sample, and get updated next actions.
+
+## Start the presentation demo
+
+After installing dependencies below, run this from the repository root:
+
+```bash
+npm run demo
+```
+
+Open <http://localhost:3000> → **Load demo example** → **Analyze evidence** → **Start graded assessment**. This command starts both servers with deterministic bundled analysis and **real SQL execution and hidden-test grading**. It requires no AI key or external AI service. The SQL editor and PDF worker are served locally. Ctrl+C stops both servers.
+
+If a port is already in use, stop the earlier server in its terminal before retrying. The launcher also accepts `npm run demo -- --web-port 3001 --api-port 8001`.
+
+In another terminal, run `npm run smoke` for a complete API rehearsal through the frontend: failing refund query → corrected 100/100 → updated evidence and roadmap.
+
+Presentation materials: [timed walkthrough](demo/walkthrough.md), [speaking script and judging notes](demo/pitch.md), and [prepared SQL](demo/solutions/).
 
 ## Requirements
 
@@ -16,7 +32,8 @@ From the repository root:
 python3.12 -m venv .venv
 source .venv/bin/activate
 python -m pip install -e '.[dev]'
-npm install
+npm ci
+npm ci --prefix apps/web
 ```
 
 ## Generate shared contracts
@@ -32,13 +49,25 @@ This updates:
 
 Both files are checked in. The test suite fails when the OpenAPI snapshot no longer matches the application.
 
-## Test Part 2
+## Automated checks
 
 ```bash
-.venv/bin/python -m pytest
+npm test
+npm run typecheck --prefix apps/web
+npm run lint --prefix apps/web
+npm run build --prefix apps/web
 ```
 
 The suite runs offline with deterministic fixtures and mocked provider responses. It checks quote grounding, missing SQL evidence, contextual versus keyword-only claims, prompt injection, mixed/uncovered competencies, priorities, provider failures, real text-PDF parsing, upload limits, and the shared API contracts. It does not require an API key.
+
+Default pytest discovery includes the API, SQL-project, and interview-module tests. For the real browser flow:
+
+```bash
+npx --prefix apps/web --no-install playwright install chromium
+npm run test:e2e
+```
+
+The browser tests start their own offline demo on ports 3100/8100, use a separate `.next-e2e` build directory, block external browser requests in the main flow, and verify query previews, partial evidence, failing/corrected submissions, retries, results, reset, and API-unavailable recovery. They save presentation screenshots under `output/playwright/`.
 
 ## Run an offline demo
 
@@ -92,7 +121,7 @@ Edit `.env`: set `GAPMAP_DEMO_MODE=0`, then choose a provider. OpenAI and Groq u
 .venv/bin/python -m uvicorn gapmap.apps.api.main:app --reload --port 8000 --env-file .env
 ```
 
-Use `/docs` to submit a full internship posting and your pasted resume or PDF. Live responses include `analysis_mode: llm`. The key is never supplied by the frontend. `.env` is ignored by Git. Live analysis sends the resume and posting text to OpenAI for extraction; the API request disables optional response storage.
+Use `/docs` to submit a full internship posting and your pasted resume or PDF. Live responses include `analysis_mode: llm`. The key is never supplied by the frontend. `.env` is ignored by Git. Live analysis sends the resume and posting text to the configured extraction provider; the OpenAI-compatible request disables optional response storage.
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
@@ -107,7 +136,7 @@ Use `/docs` to submit a full internship posting and your pasted resume or PDF. L
 
 Without a configured key, analysis returns an actionable `503`. Provider failures, refusals, invalid schemas, or fewer than five grounded requirements also return `503`. There is no silent fallback: demo mode must be enabled explicitly, and only accepts the bundled posting (any supplied resume is still evaluated). Arbitrary postings are never replaced with fixture results. Health checks and fixture retrieval work without a key.
 
-Both provider clients use the same strict JSON schema and Pydantic validation. Ollama receives the resume and posting only for extraction; deterministic quote grounding, scoring, and project recommendations remain server-side.
+Provider clients use the same extraction schema and Pydantic validation. Ollama receives the resume and posting only for extraction; deterministic quote grounding, scoring, and project recommendations remain server-side.
 
 ## Implemented routes
 
@@ -144,5 +173,7 @@ Resumes and postings are untrusted data. They cannot select endpoints/tools, exe
 The canonical inputs and recording outline are under `demo/`. The fixture resume intentionally has no SQL claim. The labeled five-requirement extraction fixture is `services/analysis/fixtures/demo_extraction.json`; its job quotes are exact substrings of the bundled posting.
 
 The session store is single-process and in memory. **All analyses and assessment state reset whenever the API process restarts.** A durable store can replace it through the same integration boundary.
+
+The browser retains entered text, evidence, and drafts in local storage. **Reset session** erases that saved browser state. Start a fresh analysis after an API restart.
 
 Project results evidence narrow competencies from one work sample. GapMap does not predict employability or job-placement odds.

@@ -136,6 +136,13 @@ TASKS: tuple[TaskDefinition, ...] = (
 TASKS_BY_ID = {task.id: task for task in TASKS}
 
 
+def competency_tasks(project_id: str, skill_id: str) -> dict[str, int]:
+    """All designated task contributions needed to demonstrate a competency."""
+    if project_id != PROJECT_ID:
+        return {}
+    return {task.id: task.points[skill_id] for task in TASKS if skill_id in task.points}
+
+
 def get_task(project_id: str, task_id: str) -> TaskDefinition | None:
     if project_id != PROJECT_ID:
         return None

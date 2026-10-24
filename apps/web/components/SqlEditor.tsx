@@ -1,6 +1,10 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { loader } from "@monaco-editor/react";
+
+// Serve Monaco and its workers locally so the assessment works without a CDN.
+loader.config({ paths: { vs: "/monaco/vs" } });
 
 const Editor = dynamic(() => import("@monaco-editor/react"), {
   ssr: false,
@@ -25,6 +29,7 @@ export function SqlEditor({
         value={value}
         onChange={(next) => onChange(next ?? "")}
         options={{
+          ariaLabel: label,
           minimap: { enabled: false },
           fontSize: 13,
           lineNumbers: "on",

@@ -6,8 +6,12 @@ __pycache__/
 htmlcov/
 node_modules/
 .next/
+.next-e2e/
 *.tsbuildinfo
 apps/web/public/pdf.worker.min.mjs
+apps/web/public/monaco/
+apps/web/test-results/
+apps/web/playwright-report/
 .DS_Store
 .env
 .env.*

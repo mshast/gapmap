@@ -7,7 +7,6 @@ import type {
 } from "@/lib/types";
 
 export const isMockMode = process.env.NEXT_PUBLIC_GAPMAP_MOCK !== "false";
-const apiBase = process.env.NEXT_PUBLIC_GAPMAP_API_URL ?? "";
 
 const demoResume = `Maya Chen
 Computer Science student
@@ -89,15 +88,27 @@ GROUP BY c.region;`,
 function errorMessage(body: unknown, fallback: string): string {
   if (typeof body === "object" && body !== null && "detail" in body) {
     const detail = (body as { detail: unknown }).detail;
+    if (detail === "Session not found.") return "Your session expired after the API restarted. Return to Input and analyze again.";
     if (typeof detail === "string") return detail;
+    if (Array.isArray(detail)) {
+      const messages = detail.flatMap((item) => typeof item?.msg === "string" ? [item.msg] : []);
+      if (messages.length) return messages.join(" ");
+    }
   }
   return fallback;
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${apiBase}${path}`, init);
+  let response: Response;
+  try {
+    response = await fetch(path, init);
+  } catch {
+    throw new Error("GapMap API is unavailable. Start both servers with npm run demo, then try again.");
+  }
   const body = await response.json().catch(() => null);
-  if (!response.ok) throw new Error(errorMessage(body, "The request could not be completed. Try again."));
+  if (!response.ok) throw new Error(errorMessage(body, response.status >= 500
+    ? "GapMap API is unavailable. Start both servers with npm run demo, then try again."
+    : "The request could not be completed. Try again."));
   return body as T;
 }
 

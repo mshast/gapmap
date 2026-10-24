@@ -504,6 +504,30 @@ def test_all_tasks_demonstrate_sql_and_advance_roadmap(client: TestClient, sessi
     assert "req-sql" not in {item["requirement_id"] for item in state["roadmap"]}
 
 
+def test_unsubmitted_tasks_cannot_fully_demonstrate_a_competency(
+    client: TestClient, session_id: str
+) -> None:
+    post(client, "submit", session_id, "t1", REFERENCE["t1"])
+    first = readiness(client, session_id)
+    filtering = next(e for e in first["competency_evidence"] if e["skill_id"] == "sql_filtering")
+    assert (filtering["earned"], filtering["possible"], filtering["status"]) == (
+        10, 20, "partially_demonstrated"
+    )
+
+    post(client, "submit", session_id, "t2", REFERENCE["t2"])
+    second = readiness(client, session_id)
+    aggregation = next(e for e in second["competency_evidence"] if e["skill_id"] == "sql_aggregation")
+    assert (aggregation["earned"], aggregation["possible"], aggregation["status"]) == (
+        15, 25, "partially_demonstrated"
+    )
+    assert next(r for r in second["requirements"] if r["id"] == "req-sql")["evidence_status"] == "partially_demonstrated"
+    assert "req-sql" in {item["requirement_id"] for item in second["roadmap"]}
+
+    post(client, "submit", session_id, "t3", REFERENCE["t3"])
+    final = readiness(client, session_id)
+    assert next(r for r in final["requirements"] if r["id"] == "req-sql")["evidence_status"] == "demonstrated_on_project"
+
+
 def test_run_does_not_change_session_evidence(client: TestClient, session_id: str) -> None:
     post(client, "run", session_id, "t3", REFERENCE["t3"])
     assert readiness(client, session_id)["project_total"] == {"earned": 0, "possible": 0}

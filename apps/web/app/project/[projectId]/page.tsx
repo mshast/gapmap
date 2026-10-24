@@ -1,19 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, Check, CirclePlay, LoaderCircle, Send, Table2, TriangleAlert } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { SqlEditor } from "@/components/SqlEditor";
 import { useAppState } from "@/components/AppStateProvider";
-import { getProject, isMockMode, runQuery, submitTask } from "@/lib/api";
+import { getProject, getReadiness, isMockMode, runQuery, submitTask } from "@/lib/api";
 import type { Project, ProjectTask, RunResult } from "@/lib/types";
 
 export default function ProjectPage() {
   const params = useParams<{ projectId: string }>();
   const projectId = params.projectId;
-  const router = useRouter();
   const { state, setState, hydrated } = useAppState();
   const [project, setProject] = useState<Project | null>(null);
   const [currentTaskIndex, setCurrentTaskIndex] = useState(0);
@@ -61,8 +60,16 @@ export default function ProjectPage() {
     setSubmitting(true); setError(""); setNotice("");
     try {
       const result = await submitTask(projectId, state.analysis.session_id, task.id, query);
-      setState((current) => ({ ...current, submissions: { ...current.submissions, [task.id]: result } }));
+      setState((current) => ({ ...current, readiness: null, submissions: { ...current.submissions, [task.id]: result } }));
       setNotice(isMockMode ? "Fixture response saved. This is not an evaluation of your SQL." : "Submission evaluated and saved.");
+      if (!isMockMode) {
+        try {
+          const readiness = await getReadiness(state.analysis.session_id);
+          setState((current) => ({ ...current, readiness }));
+        } catch {
+          setError("Submission saved. Open Results to retry refreshing your evidence.");
+        }
+      }
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Submission could not be evaluated. Try again.");
     } finally {
@@ -86,7 +93,7 @@ export default function ProjectPage() {
 
   if (!hydrated || loading) return <AppShell><div className="page-wrap loading-state"><LoaderCircle className="spin" /> Loading project…</div></AppShell>;
   if (!state.analysis) return <AppShell><div className="page-wrap empty-state"><h1>No active session.</h1><p>Analyze a role before opening its project.</p><Link className="button button-primary" href="/">Go to input <ArrowRight size={16} /></Link></div></AppShell>;
-  if (error && !project) return <AppShell><div className="page-wrap empty-state"><p className="eyebrow">PROJECT UNAVAILABLE</p><h1>Could not open this work sample.</h1><p>{error}</p><button className="button button-outline" onClick={() => router.refresh()}>Retry</button></div></AppShell>;
+  if (error && !project) return <AppShell><div className="page-wrap empty-state"><p className="eyebrow">PROJECT UNAVAILABLE</p><h1>Could not open this work sample.</h1><p>{error}</p><button className="button button-outline" onClick={() => window.location.reload()}>Retry</button></div></AppShell>;
   if (!project || !task) return null;
 
   return (

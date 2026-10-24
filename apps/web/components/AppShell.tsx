@@ -5,10 +5,11 @@ import { usePathname } from "next/navigation";
 import { Compass, FlaskConical } from "lucide-react";
 import { isMockMode } from "@/lib/api";
 import { useAppState } from "@/components/AppStateProvider";
+import { initialState } from "@/lib/types";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { state } = useAppState();
+  const { state, setState } = useAppState();
   const projectHref = state.analysis?.recommended_project_id
     ? `/project/${state.analysis.recommended_project_id}`
     : "/readiness#assessment-title";
@@ -37,8 +38,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </nav>
         <div className={`mode-chip${isMockMode ? " mock" : " live"}`}>
           {isMockMode ? <FlaskConical size={14} /> : <span className="live-dot" />}
-          {isMockMode ? "Demo fixtures" : "API connected"}
+          {isMockMode ? "Demo fixtures" : state.analysis?.analysis_mode === "demo" ? "Demo analysis · real SQL" : "API mode"}
         </div>
+        <Link className="text-button session-reset" href="/" onClick={() => setState(initialState)}>Reset session</Link>
       </header>
       <main>{children}</main>
       <footer className="footer-note">

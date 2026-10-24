@@ -329,3 +329,11 @@ h3 { font-size: 15px; line-height: 1.35; }
   .roadmap-band { grid-template-columns: 1fr; gap: 11px; padding: 16px; }
   .footer-note { min-height: 44px; font-size: 9px; }
 }
+
+.session-reset { white-space: nowrap; font-size: 10px; }
+@media (max-width: 700px) {
+  .topbar { gap: 10px; flex-wrap: wrap; height: auto; min-height: 64px; padding-top: 10px; padding-bottom: 10px; }
+  .main-nav { gap: 0; }
+  .nav-link { padding: 8px; }
+  .mode-chip { margin-left: 0; }
+}

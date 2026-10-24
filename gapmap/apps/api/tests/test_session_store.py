@@ -83,12 +83,18 @@ async def test_all_sql_subskills_are_required_for_full_demonstration(
     demo_store: InMemorySessionStore,
 ) -> None:
     analysis = demo_store.create_analysis(await demo_draft())
-    for index, skill_id in enumerate(("sql_joins", "sql_filtering", "sql_aggregation"), 1):
+    contributions = {
+        "t1": [("sql_joins", 25), ("sql_filtering", 10)],
+        "t2": [("sql_filtering", 10), ("sql_aggregation", 15)],
+        "t3": [("sql_aggregation", 10), ("sql_refund_edge_cases", 30)],
+    }
+    for task_id, skills in contributions.items():
+        possible = sum(points for _, points in skills)
         demo_store.record_submission(
             analysis.session_id,
             "revenue-debug-001",
-            f"t{index}",
-            submission(f"t{index}", 10, 10, [demonstrated(skill_id)]),
+            task_id,
+            submission(task_id, possible, possible, [demonstrated(skill_id, points, points) for skill_id, points in skills]),
         )
     readiness = demo_store.readiness_for(analysis.session_id)
     assert readiness is not None

@@ -48,7 +48,7 @@ export default function ResultsPage() {
     }
     return scores;
   }, [state.readiness, submissions]);
-  const totalEarned = submissions.reduce((sum, item) => sum + item.task_score.earned, 0);
+  const totalEarned = state.readiness?.project_total.earned ?? submissions.reduce((sum, item) => sum + item.task_score.earned, 0);
   const totalPossible = tasks.length ? tasks.reduce((sum, task) => sum + (state.submissions[task.id]?.task_score.possible ?? 0), 0) : 0;
   const submittedCount = submissions.length;
 
@@ -75,7 +75,8 @@ export default function ResultsPage() {
 
   const roadmap = state.readiness?.roadmap ?? analysis.roadmap ?? [];
   const updatedRequirements = state.readiness?.requirements ?? analysis.requirements;
-  const gapPlans = plansForRequirements(updatedRequirements);
+  const priorities = new Map(roadmap.map((item) => [item.requirement_id, item.priority]));
+  const gapPlans = plansForRequirements([...updatedRequirements].sort((a, b) => (priorities.get(a.id) ?? Infinity) - (priorities.get(b.id) ?? Infinity)));
 
   return (
     <AppShell>

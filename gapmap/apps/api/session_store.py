@@ -22,6 +22,7 @@ from gapmap.apps.api.contracts import (
     VerificationCapability,
 )
 from gapmap.apps.api.services.analysis.matcher import build_roadmap
+from gapmap.apps.api.services.projects.registry import competency_tasks
 
 
 @dataclass
@@ -105,15 +106,24 @@ class InMemorySessionStore:
 
     @staticmethod
     def _aggregate_competencies(session: _Session) -> dict[str, CompetencyEvidence]:
-        grouped: dict[str, list[tuple[str, CompetencyScore]]] = {}
-        for (project_id, _), submission in session.active_submissions.items():
+        grouped: dict[str, list[tuple[str, str, CompetencyScore]]] = {}
+        for (project_id, task_id), submission in session.active_submissions.items():
             for score in submission.competency_scores:
-                grouped.setdefault(score.skill_id, []).append((project_id, score))
+                grouped.setdefault(score.skill_id, []).append((project_id, task_id, score))
 
         evidence: dict[str, CompetencyEvidence] = {}
         for skill_id, entries in grouped.items():
-            statuses = [entry.status for _, entry in entries]
-            if entries and all(status is EvidenceStatus.DEMONSTRATED_ON_PROJECT for status in statuses):
+            statuses = [entry.status for _, _, entry in entries]
+            possible = 0
+            complete = True
+            for project_id in dict.fromkeys(project_id for project_id, _, _ in entries):
+                designated = competency_tasks(project_id, skill_id)
+                attempted = {task_id for source, task_id, _ in entries if source == project_id}
+                complete = complete and set(designated).issubset(attempted)
+                possible += sum(designated.values()) if designated else sum(
+                    score.possible for source, _, score in entries if source == project_id
+                )
+            if complete and all(status is EvidenceStatus.DEMONSTRATED_ON_PROJECT for status in statuses):
                 status = EvidenceStatus.DEMONSTRATED_ON_PROJECT
             elif any(status is not EvidenceStatus.UNVERIFIED for status in statuses):
                 status = EvidenceStatus.PARTIALLY_DEMONSTRATED
@@ -122,8 +132,8 @@ class InMemorySessionStore:
             evidence[skill_id] = CompetencyEvidence(
                 skill_id=skill_id,
                 status=status,
-                earned=sum(entry.earned for _, entry in entries),
-                possible=sum(entry.possible for _, entry in entries),
+                earned=sum(entry.earned for _, _, entry in entries),
+                possible=possible,
                 source_project_id=entries[-1][0],
             )
         return evidence

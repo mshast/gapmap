@@ -26,7 +26,7 @@ dev = [
 packages = ["gapmap"]
 
 [tool.pytest.ini_options]
-testpaths = ["gapmap/apps/api/tests"]
+testpaths = ["gapmap/apps/api"]
 addopts = "-q"
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"

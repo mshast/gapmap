@@ -1,33 +1,42 @@
-# GapMap Three-Minute Demo Walkthrough
+# GapMap: three-minute presentation rehearsal
 
-This walkthrough covers the integrated frontend, analysis, SQL assessment, and readiness flow.
+## Start and verify
 
-## 0:00–0:20 — Problem
+From the repository root, run `npm run demo`. It starts both servers with bundled analysis and real SQL execution. Open <http://localhost:3000>. Ctrl+C in that terminal stops both servers. If a port is occupied, stop the older server in its terminal first.
 
-Students often know that a role asks for skills they have not yet demonstrated, but a keyword match does not explain what evidence is missing. GapMap traces requirements to the posting and recommends a focused work sample instead of claiming a job-fit percentage.
+In a second terminal, run `npm run smoke`. Four PASS lines verify the complete flow through the frontend proxy, including a failing refund query, a corrected 100/100 result, and the updated roadmap. This creates its own session and does not change the browser's session.
 
-## 0:20–0:45 — Inputs
+Use the bundled example for the recording. No AI key is required, and the editor and PDF worker are served locally. Say that extraction is a labeled demo fixture; SQL execution and hidden-test grading are real. Live extraction is a separate provider-dependent capability.
 
-Show `demo/resume.txt` and `demo/job-description.txt`. Call out that the resume includes Python project experience but no SQL claim. Run with `GAPMAP_DEMO_MODE=1` for a labeled, deterministic recording; explain that live structured extraction requires a server API key and that text-PDF uploads are also supported.
+Open these files in your editor before rehearsing:
 
-## 0:45–1:05 — Traceable gaps
+- `demo/solutions/t1.sql`
+- `demo/solutions/t2.sql`
+- `demo/solutions/t3-naive.sql` (intentionally incorrect)
+- `demo/solutions/t3.sql` (corrected)
 
-Submit the fixture to `POST /api/analyze`. Show five traceable requirements, the exact SQL/React/Docker quotes, and `analysis_mode: demo`. SQL begins `unverified`; Python has self-reported `resume_evidence`; React and Docker have `verification_capability: not_assessable` because the initial mini-project cannot test them.
+Paste whole queries during the demo. Do not type SQL from scratch on stage.
 
-## 1:05–1:35 — Recommended project
+## Click sequence
 
-Show `GET /api/projects/recommended` returning `revenue-debug-001` because it assesses the required SQL skills. Open the project and preview the starter query on the visible fixture.
+| Time | Show | Action / message |
+| --- | --- | --- |
+| 0:00–0:20 | Input screen | Explain the gap between a resume claim and evidence of doing the work. |
+| 0:20–0:45 | Resume and posting | Click Load demo example, then Analyze evidence. Maya is a fictional student whose resume has Python project experience and no SQL claim. |
+| 0:45–1:05 | Evidence map | Point to the SQL posting quote, SQL not yet verified, Python resume evidence, and React/Docker having no matching test. |
+| 1:05–1:30 | SQL workspace | Start graded assessment. Paste and submit T1, then T2. They earn 35 and 25 points. SQL remains partial because T3 still contributes required tests. |
+| 1:30–2:05 | Refund task | Select T3. Paste `t3-naive.sql`, submit, and point to the failed multiple-refund case. Paste `t3.sql` and resubmit for 40/40. |
+| 2:05–2:30 | Results and evidence map | Click View results: 100/100, aggregation 25/25, refunds 30/30. SQL becomes demonstrated on this project. React and Docker stay unverified. Show the next actions. |
+| 2:30–2:50 | Architecture / results | Explain that AI extracts text, source checks ground quotes, and deterministic tests grade SQL. Describe the early-verification bug and the regression test that fixed it. |
+| 2:50–3:00 | Results | Close: GapMap gives a student a concrete way to build the next piece of evidence. |
 
-## 1:35–2:10 — Failing then passing SQL assessment
+## Before recording
 
-Run the incorrect T3 query that double-counts orders with multiple refunds, show safe public feedback, then run the corrected query and show the updated score.
+- Run the smoke check and open the SQL editor once to warm the app.
+- Click Reset session, then start the walkthrough from Input. This erases the browser's saved inputs and attempts.
+- Rehearse twice with a timer. Aim to finish at 2:45, leaving room for clicks and pauses.
+- Use a laptop viewport with legible text. Keep only the app and solution files ready.
+- Capture a screen recording as a fallback. Screenshots from the browser test are under `output/playwright/`.
+- Do not restart the API during the presentation: sessions are in memory. If it restarts, load the example and analyze again.
 
-## 2:10–2:35 — Evidence and roadmap
-
-Show `GET /api/readiness`. The current foundation recomputes readiness from the latest successful task attempt, prevents retry scores from accumulating, requires all mapped assessable SQL subskills for full demonstration, and never transfers SQL evidence to React or Docker.
-
-## 2:35–3:00 — Architecture and lesson
-
-Show the FastAPI contract layer, replaceable analysis/project service interfaces, generated TypeScript declarations, and session store. Explain that stable contracts let the four workstreams proceed independently, while explicit capability gaps keep the demo honest.
-
-Project results evidence narrow SQL competencies from this work sample; GapMap does not predict employability or job-placement odds.
+The speaking script, rubric evidence, research, and likely questions are in `demo/pitch.md`.

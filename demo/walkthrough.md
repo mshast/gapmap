@@ -1,6 +1,6 @@
 # GapMap Three-Minute Demo Walkthrough
 
-This walkthrough covers the Part 4 foundation and Part 2 analysis. Frontend and SQL execution/grading remain owned by Parts 1 and 3.
+This walkthrough covers the integrated frontend, analysis, SQL assessment, and readiness flow.
 
 ## 0:00–0:20 — Problem
 
@@ -16,11 +16,11 @@ Submit the fixture to `POST /api/analyze`. Show five traceable requirements, the
 
 ## 1:05–1:35 — Recommended project
 
-Show `GET /api/projects/recommended` returning `revenue-debug-001` because it assesses the required SQL skills. Until Part 3 integrates, project detail, run, and submit routes intentionally return `501 Project service is not installed.`
+Show `GET /api/projects/recommended` returning `revenue-debug-001` because it assesses the required SQL skills. Open the project and preview the starter query on the visible fixture.
 
 ## 1:35–2:10 — Failing then passing SQL assessment
 
-After Part 3 integration, run the incorrect T3 query that double-counts orders with multiple refunds, show safe public feedback, then run the corrected query. Do not record this segment until the real deterministic grader and hidden fixtures are connected.
+Run the incorrect T3 query that double-counts orders with multiple refunds, show safe public feedback, then run the corrected query and show the updated score.
 
 ## 2:10–2:35 — Evidence and roadmap
 

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowRight, Check, FileText, LoaderCircle, Sparkles, Upload, X } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { useAppState } from "@/components/AppStateProvider";
-import { analyze, getDemoFixture, isMockMode } from "@/lib/api";
+import { analyze, analyzePdf, getDemoFixture, isMockMode } from "@/lib/api";
 import { extractPdfText } from "@/lib/pdf";
 
 export default function HomePage() {
@@ -16,6 +16,7 @@ export default function HomePage() {
   const [analyzing, setAnalyzing] = useState(false);
   const [error, setError] = useState("");
   const [fileLabel, setFileLabel] = useState("");
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
 
   async function loadDemo() {
     setError("");
@@ -28,6 +29,7 @@ export default function HomePage() {
         jobText: fixture.job_description,
       }));
       setFileLabel("");
+      setResumeFile(null);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Demo example could not be loaded.");
     } finally {
@@ -50,6 +52,7 @@ export default function HomePage() {
       const text = await extractPdfText(file);
       setState((current) => ({ ...current, resumeText: text }));
       setFileLabel(file.name);
+      setResumeFile(file);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "We could not read this PDF. Paste your resume text instead.");
     }
@@ -60,7 +63,9 @@ export default function HomePage() {
     setError("");
     setAnalyzing(true);
     try {
-      const result = await analyze(state.resumeText, state.jobText);
+      const result = resumeFile && !isMockMode
+        ? await analyzePdf(resumeFile, state.jobText)
+        : await analyze(state.resumeText, state.jobText);
       setState((current) => ({ ...current, analysis: result, project: null, readiness: null, previews: {}, submissions: {} }));
       router.push("/readiness");
     } catch (caught) {
@@ -111,12 +116,16 @@ export default function HomePage() {
               id="resume-text"
               className="text-input resume-input"
               value={state.resumeText}
-              onChange={(event) => setState((current) => ({ ...current, resumeText: event.target.value }))}
+              onChange={(event) => {
+                setState((current) => ({ ...current, resumeText: event.target.value }));
+                setFileLabel("");
+                setResumeFile(null);
+              }}
               placeholder="Paste resume text here…"
               rows={11}
               maxLength={50000}
             />
-            <div className="textarea-foot"><span>{state.resumeText.length.toLocaleString()} / 50,000</span>{state.resumeText && <button className="text-button" type="button" onClick={() => { setState((current) => ({ ...current, resumeText: "" })); setFileLabel(""); }}>Clear</button>}</div>
+            <div className="textarea-foot"><span>{state.resumeText.length.toLocaleString()} / 50,000</span>{state.resumeText && <button className="text-button" type="button" onClick={() => { setState((current) => ({ ...current, resumeText: "" })); setFileLabel(""); setResumeFile(null); }}>Clear</button>}</div>
           </section>
 
           <section className="input-panel job-panel" aria-labelledby="job-heading">

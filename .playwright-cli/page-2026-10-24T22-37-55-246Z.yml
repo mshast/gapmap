@@ -1,0 +1,75 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - link "GapMap home" [ref=e4] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e9]: gapmap.
+      - navigation "Main navigation" [ref=e10]:
+        - link "01 Input" [ref=e11] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e12]: "01"
+          - text: Input
+        - link "02 Readiness" [ref=e13] [cursor=pointer]:
+          - /url: /readiness
+          - generic [ref=e14]: "02"
+          - text: Readiness
+        - link "03 Project" [ref=e15] [cursor=pointer]:
+          - /url: /project/revenue-debug-001
+          - generic [ref=e16]: "03"
+          - text: Project
+        - link "04 Results" [ref=e17] [cursor=pointer]:
+          - /url: /results
+          - generic [ref=e18]: "04"
+          - text: Results
+      - generic [ref=e19]: API connected
+    - main [ref=e21]:
+      - generic [ref=e22]:
+        - generic [ref=e23]:
+          - generic [ref=e24]:
+            - paragraph [ref=e25]: EVIDENCE BUILDER / 01
+            - heading [level=1] [ref=e27]:
+              - text: Make your next
+              - emphasis [ref=e28]: move visible.
+            - paragraph [ref=e29]: Bring a resume and a real role. GapMap finds the evidence you already have, then helps you build what is missing.
+          - generic "Workflow steps" [ref=e30]:
+            - generic [ref=e31]: 01—04
+            - generic [ref=e32]: Read the role.Build one useful proof.
+        - generic [ref=e33]:
+          - region [ref=e34]:
+            - generic [ref=e35]:
+              - generic [ref=e36]: A
+              - generic [ref=e37]:
+                - paragraph [ref=e38]: YOUR STARTING POINT
+                - heading "Resume" [level=2] [ref=e39]
+            - paragraph [ref=e43]: Upload a text-based PDF or paste the text below. A missing mention is not a verdict on your ability.
+            - generic [ref=e44]:
+              - button "Choose File" [ref=e45]
+              - button "Choose PDF" [ref=e46] [cursor=pointer]
+              - generic [ref=e50]: PDF · max 5 MB
+            - generic [ref=e51]: Resume text
+            - textbox "Resume text" [ref=e52]:
+              - /placeholder: Paste resume text here…
+            - generic [ref=e53]: 0 / 50,000
+          - region [ref=e55]:
+            - generic [ref=e56]:
+              - generic [ref=e57]: B
+              - generic [ref=e58]:
+                - paragraph [ref=e59]: THE ROLE YOU WANT
+                - heading "Job posting" [level=2] [ref=e60]
+            - paragraph [ref=e63]: Paste the full posting so each requirement can stay tied to its original wording.
+            - generic [ref=e64]:
+              - text: TEXT ONLY
+              - generic [ref=e65]: Paste from the employer’s listing
+            - generic [ref=e66]: Job posting text
+            - textbox "Job posting text" [ref=e67]:
+              - /placeholder: Paste job description here…
+            - generic [ref=e68]: 0 / 50,000
+          - generic [ref=e70]:
+            - button "Load demo example" [ref=e71] [cursor=pointer]
+            - generic [ref=e74]:
+              - generic [ref=e75]: Connected to GapMap API
+              - button "Analyze evidence" [disabled] [ref=e76]
+    - contentinfo [ref=e79]:
+      - generic [ref=e80]: GapMap · Evidence, not odds.
+      - generic [ref=e81]: Resume claims are not test results.
+  - button "Open Next.js Dev Tools" [ref=e87] [cursor=pointer]

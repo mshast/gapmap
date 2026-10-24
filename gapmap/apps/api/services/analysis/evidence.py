@@ -63,6 +63,17 @@ _INSTRUCTION = re.compile(
 )
 
 
+def _matches_eligibility_fact(resume_quote: str, job_quote: str) -> bool:
+    years = set(re.findall(r"\b(?:19|20)\d{2}\b", job_quote))
+    if not years.intersection(re.findall(r"\b(?:19|20)\d{2}\b", resume_quote)):
+        return False
+    job_is_graduation = re.search(r"\b(?:graduat(?:e|ion)|class\s+of|degree|ba|bs)\b", job_quote, re.I)
+    resume_is_graduation = re.search(
+        r"\b(?:graduat(?:e|ion)|class\s+of|degree|expected|education|ba|bs)\b", resume_quote, re.I
+    )
+    return bool(job_is_graduation and resume_is_graduation)
+
+
 def match_resume_evidence(
     proposed_quotes: list[str], resume_text: str, skill_ids: list[str], job_quote: str = ""
 ) -> list[ResumeEvidence]:
@@ -95,9 +106,11 @@ def match_resume_evidence(
                     word[:8] for word in re.findall(r"[a-z]{4,}", value.lower())
                     if word not in stopwords
                 }
-            if not terms(quote).intersection(terms(job_quote)):
+            if not terms(quote).intersection(terms(job_quote)) and not _matches_eligibility_fact(quote, job_quote):
                 continue
-        contextual = bool(_USAGE.search(quote)) and len(quote.split()) >= 3
+        contextual = (
+            bool(_USAGE.search(quote)) and len(quote.split()) >= 3
+        ) or _matches_eligibility_fact(quote, job_quote)
         evidence.append(ResumeEvidence(
             quote=quote, strength="contextual" if contextual else "keyword_only"
         ))

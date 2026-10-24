@@ -1,0 +1,35 @@
+- generic [active] [ref=f3e1]:
+  - generic [ref=f3e2]:
+    - banner [ref=f3e3]:
+      - link "GapMap home" [ref=f3e4] [cursor=pointer]:
+        - /url: /
+        - generic [ref=f3e9]: gapmap.
+      - navigation "Main navigation" [ref=f3e10]:
+        - link "01 Input" [ref=f3e11] [cursor=pointer]:
+          - /url: /
+          - generic [ref=f3e12]: "01"
+          - text: Input
+        - link "02 Readiness" [ref=f3e13] [cursor=pointer]:
+          - /url: /readiness
+          - generic [ref=f3e14]: "02"
+          - text: Readiness
+        - link "03 Project" [ref=f3e15] [cursor=pointer]:
+          - /url: /project/revenue-debug-001
+          - generic [ref=f3e16]: "03"
+          - text: Project
+        - link "04 Results" [ref=f3e17] [cursor=pointer]:
+          - /url: /results
+          - generic [ref=f3e18]: "04"
+          - text: Results
+      - generic [ref=f3e19]: API connected
+    - main [ref=f3e21]:
+      - generic [ref=f3e22]:
+        - heading "No results yet." [level=1] [ref=f3e23]
+        - paragraph [ref=f3e24]: Start with a role and build a work sample.
+        - link "Go to input" [ref=f3e25] [cursor=pointer]:
+          - /url: /
+    - contentinfo [ref=f3e28]:
+      - generic [ref=f3e29]: GapMap · Evidence, not odds.
+      - generic [ref=f3e30]: Resume claims are not test results.
+  - button "Open Next.js Dev Tools" [ref=f3e36] [cursor=pointer]
+  - alert [ref=f3e40]

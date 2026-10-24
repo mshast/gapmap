@@ -4,16 +4,20 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Compass, FlaskConical } from "lucide-react";
 import { isMockMode } from "@/lib/api";
-
-const links = [
-  { href: "/", label: "Input" },
-  { href: "/readiness", label: "Readiness" },
-  { href: "/project/revenue-debug-001", label: "Project" },
-  { href: "/results", label: "Results" },
-];
+import { useAppState } from "@/components/AppStateProvider";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { state } = useAppState();
+  const projectHref = state.analysis?.recommended_project_id
+    ? `/project/${state.analysis.recommended_project_id}`
+    : "/readiness#assessment-title";
+  const links = [
+    { href: "/", label: "Input" },
+    { href: "/readiness", label: "Readiness" },
+    { href: projectHref, label: "Projects" },
+    { href: "/results", label: "Results" },
+  ];
   return (
     <div className="app-frame">
       <header className="topbar">

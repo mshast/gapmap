@@ -12,6 +12,7 @@ from gapmap.apps.api.services.analysis.evidence import (
     initial_status, match_resume_evidence, normalize_whitespace, skills_in_text, verified_excerpt,
 )
 from gapmap.apps.api.services.analysis.llm_client import ExtractionError, Extractor, StructuredLLMClient
+from gapmap.apps.api.services.analysis.ollama_client import OllamaStructuredClient
 from gapmap.apps.api.services.analysis.matcher import apply_coverage, build_roadmap, select_project
 from gapmap.apps.api.services.analysis.schema import AnalysisResult, ExtractionResult
 from gapmap.apps.api.services.interfaces import AnalysisUnavailableError
@@ -24,10 +25,28 @@ class StructuredAnalysisService:
 
     @classmethod
     def from_env(cls) -> "StructuredAnalysisService":
+        provider = os.environ.get("GAPMAP_LLM_PROVIDER", "openai").strip().lower()
         key = os.environ.get("OPENAI_API_KEY", "").strip()
         model = os.environ.get("OPENAI_MODEL", "gpt-4o-mini").strip() or "gpt-4o-mini"
+        if provider == "groq":
+            key = os.environ.get("GROQ_API_KEY", "").strip()
+            model = os.environ.get("GROQ_MODEL", "openai/gpt-oss-20b").strip() or "openai/gpt-oss-20b"
+            extractor = StructuredLLMClient(
+                key, model, base_url="https://api.groq.com/openai/v1/chat/completions"
+            ) if key else None
+        elif provider == "ollama":
+            extractor: Extractor | None = OllamaStructuredClient(
+                os.environ.get("OLLAMA_BASE_URL", "http://127.0.0.1:11434"),
+                os.environ.get("OLLAMA_MODEL", "qwen2.5:3b").strip() or "qwen2.5:3b",
+            )
+        elif provider == "openai":
+            extractor = StructuredLLMClient(key, model) if key else None
+        elif provider == "demo":
+            extractor = None
+        else:
+            raise ValueError(f"Unsupported GAPMAP_LLM_PROVIDER: {provider}")
         return cls(
-            extractor=StructuredLLMClient(key, model) if key else None,
+            extractor=extractor,
             demo_mode=os.environ.get("GAPMAP_DEMO_MODE", "").lower() in {"1", "true", "yes"},
         )
 
@@ -46,7 +65,8 @@ class StructuredAnalysisService:
         else:
             if self._extractor is None:
                 raise AnalysisUnavailableError(
-                    "Analysis is not configured. Set OPENAI_API_KEY on the server, or set "
+                    "Analysis is not configured. Set OPENAI_API_KEY or GROQ_API_KEY for a hosted provider, or run Ollama with "
+                    "GAPMAP_LLM_PROVIDER=ollama, or alternatively set "
                     "GAPMAP_DEMO_MODE=1 and use GET /api/demo/fixture."
                 )
             try:

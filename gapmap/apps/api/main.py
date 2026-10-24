@@ -9,8 +9,8 @@ from gapmap.apps.api.services.analysis import StructuredAnalysisService
 from gapmap.apps.api.services.interfaces import (
     AnalysisService,
     ProjectService,
-    UnavailableProjectService,
 )
+from gapmap.apps.api.services.projects.routes import SqlProjectService
 from gapmap.apps.api.session_store import InMemorySessionStore
 
 
@@ -24,7 +24,7 @@ def create_app(
     application.state.analysis_service = (
         analysis_service if analysis_service is not None else StructuredAnalysisService.from_env()
     )
-    application.state.project_service = project_service or UnavailableProjectService()
+    application.state.project_service = project_service or SqlProjectService()
     application.state.session_store = session_store or InMemorySessionStore()
     application.add_middleware(
         CORSMiddleware,

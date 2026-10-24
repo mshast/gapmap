@@ -34,6 +34,20 @@ def skills_in_text(text: str) -> list[str]:
         "react": r"\breact(?:\.js|js)?\b",
         "docker": r"\bdocker\b",
         "dsa": r"\b(?:dsa|data\s+structures?|algorithms?)\b",
+        "java": r"\bjava\b",
+        "cpp": r"(?<![\w+])c\+\+|\bcpp\b",
+        "csharp": r"(?<!\w)c#|\bc\s+sharp\b|(?<!\w)\.net\b",
+        "javascript": r"\b(?:javascript|node\.?js|js)\b",
+        "typescript": r"\btypescript\b",
+        "cloud": r"\b(?:aws|amazon\s+web\s+services|gcp|google\s+cloud|azure|"
+                 r"cloud\s+(?:platforms?|services|computing|infrastructure))\b",
+        "git": r"\b(?:git|github|gitlab|version\s+control)\b",
+        "apis": r"\b(?:rest(?:ful)?\s+(?:apis?|services|endpoints)|restful|apis?|graphql|microservices)\b",
+        "testing": r"\b(?:unit\s+tests?|integration\s+tests?|automated\s+tests?|testing|"
+                   r"test[- ]driven|tdd|pytest|junit|jest)\b",
+        "machine_learning": r"\b(?:machine\s+learning|ml|deep\s+learning|pytorch|tensorflow|"
+                            r"scikit[- ]learn|llms?)\b",
+        "linux": r"\b(?:linux|unix|bash|shell\s+scripting)\b",
     }
     found = [
         skill for skill, pattern in patterns.items()
@@ -45,6 +59,36 @@ def skills_in_text(text: str) -> list[str]:
         if not any(skill.startswith("sql_") for skill in found):
             found = ["sql_joins", "sql_filtering", "sql_aggregation", *found]
     return found
+
+
+_ELIGIBILITY = re.compile(
+    r"\b(?:bachelor['’]?s?|master['’]?s?|ph\.?\s?d|undergraduate|degree(?!\s+of)|"
+    r"graduat(?:e|es|ing|ion)|class\s+of|enrolled|pursuing|gpa|"
+    r"work\s+authori[sz]ation|authori[sz]ed\s+to\s+work|sponsorship|visa|citizen(?:ship)?|"
+    r"security\s+clearance|relocat\w*|on[- ]?site|in[- ]office|hybrid|"
+    r"available\s+(?:to\s+start|for))\b"
+    r"|(?<!\w)(?:b\.?s|b\.?a)(?:\.|(?!\w))", re.I
+)
+
+
+def is_eligibility(text: str) -> bool:
+    """Degree, graduation, authorization, or location conditions, not skills."""
+    return bool(_ELIGIBILITY.search(text))
+
+
+def requirement_skills(job_quote: str) -> list[str]:
+    """Skills for a grounded excerpt; eligibility only when no skill is named."""
+    found = skills_in_text(job_quote)
+    if found:
+        return found
+    return ["eligibility"] if is_eligibility(job_quote) else ["other"]
+
+
+def clean_label(label: str) -> str:
+    """Drop dates from labels: 'Bachelor's 2028' names a degree, not a skill."""
+    cleaned = re.sub(r"\(?\b(?:19|20)\d{2}\b\)?", " ", label)
+    cleaned = normalize_whitespace(re.sub(r"\s+([,;:])", r"\1", cleaned)).strip(" ,;:-–—/")
+    return cleaned or label
 
 
 _USAGE = re.compile(
@@ -95,10 +139,10 @@ def match_resume_evidence(
         if _NEGATION.search(context) or _INSTRUCTION.search(context):
             continue
         resume_skills = skills_in_text(quote)
-        known_skills = set(skill_ids) - {"other"}
+        known_skills = set(skill_ids) - {"other", "eligibility"}
         if known_skills and not known_skills.intersection(resume_skills):
             continue
-        if skill_ids == ["other"]:
+        if not known_skills:
             # Require shared substantive wording for skills outside the taxonomy.
             stopwords = {"experience", "required", "preferred", "skills", "strong", "with", "the", "and"}
             def terms(value: str) -> set[str]:

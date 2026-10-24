@@ -33,9 +33,14 @@ Use required/preferred from the posting; do not turn a preference into a must-ha
 Importance is 3 for essential requirements, 2 for useful preferences, 1 for minor
 preferences. Copy the job title as target_role if present.
 
+Label each requirement with a short skill or qualification name (2-5 words)
+without dates or years, for example 'Java or C++' or 'Bachelor's degree in CS'.
+
 Use ONLY the schema's canonical skill IDs. Generic SQL maps to sql_joins,
 sql_filtering, sql_aggregation. Use sql_refund_edge_cases only for explicit refund
-or double-counting requirements. Use other for skills outside this taxonomy.
+or double-counting requirements. Use eligibility for degree, major, graduation
+date, GPA, work authorization, sponsorship, location, or availability conditions;
+these are not skills. Use other for skills outside this taxonomy.
 Do not map React, Python, or Docker to SQL skills. A mixed requirement must retain
 all its stated skills, including skills outside the available SQL project.
 

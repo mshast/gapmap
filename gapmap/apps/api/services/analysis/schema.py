@@ -25,6 +25,19 @@ class SkillID(StrEnum):
     REACT = "react"
     DOCKER = "docker"
     DSA = "dsa"
+    JAVA = "java"
+    CPP = "cpp"
+    CSHARP = "csharp"
+    JAVASCRIPT = "javascript"
+    TYPESCRIPT = "typescript"
+    CLOUD = "cloud"
+    GIT = "git"
+    APIS = "apis"
+    TESTING = "testing"
+    MACHINE_LEARNING = "machine_learning"
+    LINUX = "linux"
+    # Degree, graduation date, work authorization, location: not a skill gap.
+    ELIGIBILITY = "eligibility"
     OTHER = "other"
 
 
@@ -43,6 +56,26 @@ _ALIASES = {
     "reactjs": ["react"],
     "python3": ["python"],
     "data_structures_and_algorithms": ["dsa"],
+    "c++": ["cpp"],
+    "c#": ["csharp"],
+    "js": ["javascript"],
+    "node.js": ["javascript"],
+    "nodejs": ["javascript"],
+    "ts": ["typescript"],
+    "aws": ["cloud"],
+    "gcp": ["cloud"],
+    "azure": ["cloud"],
+    "github": ["git"],
+    "version_control": ["git"],
+    "api": ["apis"],
+    "rest": ["apis"],
+    "rest_api": ["apis"],
+    "rest_apis": ["apis"],
+    "unit_testing": ["testing"],
+    "ml": ["machine_learning"],
+    "education": ["eligibility"],
+    "degree": ["eligibility"],
+    "work_authorization": ["eligibility"],
 }
 
 

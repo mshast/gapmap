@@ -186,7 +186,6 @@ export async function analyze(resumeText: string, jobDescription: string): Promi
       analysis_mode: "demo",
       warnings: ["Fixture mode: no AI service ran."],
       target_role: "Software Engineering Intern",
-      analysis_mode: "demo",
       recommended_project_id: demoProject.id,
       requirements: mockRequirements(resumeText),
       roadmap: [
@@ -270,10 +269,6 @@ export async function submitTask(
         { earned: 0, possible: 10, skill_id: "sql_aggregation", status: "unverified" as const },
         { earned: 0, possible: 30, skill_id: "sql_refund_edge_cases", status: "unverified" as const },
       ],
-<<<<<<< HEAD
-      [{ earned: 0, possible: 30, skill_id: "sql_refund_edge_cases", status: "unverified" as const }],
-=======
->>>>>>> origin/master
     ][Math.max(taskIndex, 0)];
     return {
       submission_id: crypto.randomUUID(),

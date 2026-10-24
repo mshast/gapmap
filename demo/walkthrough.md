@@ -1,6 +1,6 @@
 # GapMap Three-Minute Demo Walkthrough
 
-This walkthrough separates the working integration foundation from the frontend, general analysis, and SQL grader work owned by Parts 1–3.
+This walkthrough covers the Part 4 foundation and Part 2 analysis. Frontend and SQL execution/grading remain owned by Parts 1 and 3.
 
 ## 0:00–0:20 — Problem
 
@@ -8,11 +8,11 @@ Students often know that a role asks for skills they have not yet demonstrated, 
 
 ## 0:20–0:45 — Inputs
 
-Show `demo/resume.txt` and `demo/job-description.txt`. Call out that the resume includes Python project experience but no SQL claim. Explain that the current foundation uses this deterministic fixture; general AI analysis and PDF extraction arrive with Part 2.
+Show `demo/resume.txt` and `demo/job-description.txt`. Call out that the resume includes Python project experience but no SQL claim. Run with `GAPMAP_DEMO_MODE=1` for a labeled, deterministic recording; explain that live structured extraction requires a server API key and that text-PDF uploads are also supported.
 
 ## 0:45–1:05 — Traceable gaps
 
-Submit the fixture to `POST /api/analyze`. Show the exact SQL, React, and Docker quotes from the posting. SQL begins `unverified`; React and Docker have `verification_capability: not_assessable` because the initial mini-project cannot test them.
+Submit the fixture to `POST /api/analyze`. Show five traceable requirements, the exact SQL/React/Docker quotes, and `analysis_mode: demo`. SQL begins `unverified`; Python has self-reported `resume_evidence`; React and Docker have `verification_capability: not_assessable` because the initial mini-project cannot test them.
 
 ## 1:05–1:35 — Recommended project
 

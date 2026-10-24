@@ -1,1 +1,1 @@
-"""Part 3: SQL mini-project registry, safe execution, and deterministic grading."""
+"""Shared fixed project metadata; execution and grading belong to Part 3."""

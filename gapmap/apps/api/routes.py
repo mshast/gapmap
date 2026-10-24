@@ -3,13 +3,15 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from starlette.concurrency import run_in_threadpool
 
 from gapmap.apps.api.contracts import (
     AnalysisResponse,
     AnalyzeRequest,
     DemoFixtureResponse,
     HealthResponse,
+    InputText,
     ProjectRecommendationResponse,
     ProjectResponse,
     ReadinessResponse,
@@ -25,6 +27,7 @@ from gapmap.apps.api.dependencies import (
 )
 from gapmap.apps.api.fixtures.loader import load_demo_fixture
 from gapmap.apps.api.services.interfaces import AnalysisService, ProjectService
+from gapmap.apps.api.services.analysis.pdf_extract import MAX_PDF_BYTES, PDFInputError, extract_pdf_text
 from gapmap.apps.api.session_store import InMemorySessionStore
 
 
@@ -51,6 +54,26 @@ async def analyze(
     store: StoreDependency,
 ) -> AnalysisResponse:
     draft = await analysis_service.analyze(request.resume_text, request.job_description)
+    return store.create_analysis(draft)
+
+
+@router.post("/analyze/pdf", response_model=AnalysisResponse)
+async def analyze_pdf(
+    resume_file: Annotated[UploadFile, File(description="Text-based resume PDF, at most 5 MB; no OCR")],
+    job_description: Annotated[InputText, Form()],
+    analysis_service: AnalysisDependency,
+    store: StoreDependency,
+) -> AnalysisResponse:
+    try:
+        if resume_file.content_type not in {"application/pdf", "application/octet-stream"}:
+            raise PDFInputError("Upload a PDF resume or paste the resume text into /api/analyze.", status_code=415)
+        # Read one extra byte to detect oversize files without reading them all.
+        data = await resume_file.read(MAX_PDF_BYTES + 1)
+    finally:
+        # Close and remove any spooled temporary upload before invoking AI.
+        await resume_file.close()
+    resume_text = await run_in_threadpool(extract_pdf_text, data)
+    draft = await analysis_service.analyze(resume_text, job_description)
     return store.create_analysis(draft)
 
 

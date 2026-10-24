@@ -1,0 +1,35 @@
+{
+  "target_role": "Software Engineering Intern",
+  "requirements": [
+    {
+      "label": "SQL relational querying",
+      "job_quote": "Experience with SQL databases is required.",
+      "importance": 3, "requirement_type": "required",
+      "skill_ids": ["sql_joins", "sql_filtering", "sql_aggregation"], "resume_quotes": []
+    },
+    {
+      "label": "Python programming",
+      "job_quote": "Experience with Python is required.",
+      "importance": 3, "requirement_type": "required",
+      "skill_ids": ["python"], "resume_quotes": []
+    },
+    {
+      "label": "React user interfaces",
+      "job_quote": "Experience building user interfaces with React is preferred.",
+      "importance": 2, "requirement_type": "preferred",
+      "skill_ids": ["react"], "resume_quotes": []
+    },
+    {
+      "label": "Docker containers",
+      "job_quote": "Familiarity with Docker containers is preferred.",
+      "importance": 2, "requirement_type": "preferred",
+      "skill_ids": ["docker"], "resume_quotes": []
+    },
+    {
+      "label": "Collaborative problem solving",
+      "job_quote": "Strong collaborative problem-solving skills are preferred.",
+      "importance": 1, "requirement_type": "preferred",
+      "skill_ids": ["other"], "resume_quotes": []
+    }
+  ]
+}

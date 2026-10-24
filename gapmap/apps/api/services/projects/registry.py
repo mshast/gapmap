@@ -175,3 +175,19 @@ def _check_allocations() -> None:
 
 
 _check_allocations()
+
+
+@dataclass(frozen=True)
+class ProjectTemplate:
+    id: str
+    title: str
+    competencies: frozenset[str]
+
+
+PROJECT_REGISTRY = (
+    ProjectTemplate(
+        id=PROJECT_ID,
+        title=PROJECT_TITLE,
+        competencies=frozenset(COMPETENCIES),
+    ),
+)

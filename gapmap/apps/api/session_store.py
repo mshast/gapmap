@@ -17,11 +17,11 @@ from gapmap.apps.api.contracts import (
     ProjectRecommendationResponse,
     ReadinessResponse,
     Requirement,
-    RoadmapItem,
     SubmitResponse,
     TaskScore,
     VerificationCapability,
 )
+from gapmap.apps.api.services.analysis.matcher import build_roadmap
 
 
 @dataclass
@@ -88,7 +88,7 @@ class InMemorySessionStore:
                 self._recompute_requirement(item, evidence)
                 for item in session.analysis.requirements
             ]
-            roadmap = self._recompute_roadmap(requirements, session.analysis.roadmap)
+            roadmap = build_roadmap(requirements)
             earned = sum(
                 attempt.task_score.earned for attempt in session.active_submissions.values()
             )
@@ -139,9 +139,11 @@ class InMemorySessionStore:
 
         uncovered = [skill_id for skill_id in requirement.skill_ids if skill_id not in evidence]
         measured = [evidence[skill_id].status for skill_id in requirement.skill_ids if skill_id in evidence]
-        updated.uncovered_skill_ids = uncovered
+        # Capability gaps describe skills outside the template, not skills whose
+        # tests the candidate has yet to submit. Preserve the analysis disclosure.
         if (
             not uncovered
+            and not requirement.uncovered_skill_ids
             and measured
             and all(status is EvidenceStatus.DEMONSTRATED_ON_PROJECT for status in measured)
         ):
@@ -149,31 +151,3 @@ class InMemorySessionStore:
         elif measured and any(status is not EvidenceStatus.UNVERIFIED for status in measured):
             updated.evidence_status = EvidenceStatus.PARTIALLY_DEMONSTRATED
         return updated
-
-    @staticmethod
-    def _recompute_roadmap(
-        requirements: list[Requirement], original: list[RoadmapItem]
-    ) -> list[RoadmapItem]:
-        actions = {item.requirement_id: item.action for item in original}
-        source_order = {item.id: index for index, item in enumerate(requirements)}
-        gap_factor = {
-            EvidenceStatus.UNVERIFIED: 2,
-            EvidenceStatus.RESUME_EVIDENCE: 1,
-            EvidenceStatus.PARTIALLY_DEMONSTRATED: 1,
-            EvidenceStatus.DEMONSTRATED_ON_PROJECT: 0,
-        }
-        unmet = [item for item in requirements if gap_factor[item.evidence_status] > 0]
-        unmet.sort(
-            key=lambda item: (
-                -(item.importance * gap_factor[item.evidence_status]),
-                source_order[item.id],
-            )
-        )
-        return [
-            RoadmapItem(
-                requirement_id=item.id,
-                action=actions.get(item.id, f"Build evidence for {item.label}"),
-                priority=index,
-            )
-            for index, item in enumerate(unmet, start=1)
-        ]

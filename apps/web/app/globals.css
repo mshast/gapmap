@@ -250,6 +250,7 @@ h3 { font-size: 15px; line-height: 1.35; }
 .plan-card h3 { margin: 0 0 7px; color: var(--ink); font-size: 20px; }
 .plan-card p { max-width: 62ch; margin: 0 0 10px; color: var(--muted); font-size: 12px; }
 .plan-deliverable { color: var(--ink) !important; }
+.plan-note { margin: 10px 0 0 !important; color: #87938b !important; font-size: 10px !important; font-style: italic; }
 .plan-card ol { margin: 12px 0 0; padding-left: 20px; color: #52665a; font-size: 11px; line-height: 1.8; }
 .results-stage-header { margin-bottom: 20px; }
 .results-recommendations { margin-top: 24px; }

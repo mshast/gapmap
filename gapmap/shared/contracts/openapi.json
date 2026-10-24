@@ -243,6 +243,78 @@
         "title": "HealthResponse",
         "type": "object"
       },
+      "ProjectPlan": {
+        "additionalProperties": false,
+        "properties": {
+          "deliverable": {
+            "title": "Deliverable",
+            "type": "string"
+          },
+          "id": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Id",
+            "type": "string"
+          },
+          "runnable_project_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Runnable Project Id"
+          },
+          "skill_ids": {
+            "items": {
+              "maxLength": 100,
+              "minLength": 1,
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Skill Ids",
+            "type": "array"
+          },
+          "source": {
+            "enum": [
+              "graded",
+              "template",
+              "ai_suggested"
+            ],
+            "title": "Source",
+            "type": "string"
+          },
+          "steps": {
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Steps",
+            "type": "array"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "why": {
+            "title": "Why",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "skill_ids",
+          "why",
+          "deliverable",
+          "steps",
+          "source"
+        ],
+        "title": "ProjectPlan",
+        "type": "object"
+      },
       "ProjectRecommendationResponse": {
         "additionalProperties": false,
         "properties": {
@@ -449,6 +521,13 @@
           "label": {
             "title": "Label",
             "type": "string"
+          },
+          "project_plans": {
+            "items": {
+              "$ref": "#/components/schemas/ProjectPlan"
+            },
+            "title": "Project Plans",
+            "type": "array"
           },
           "requirement_type": {
             "$ref": "#/components/schemas/RequirementType"

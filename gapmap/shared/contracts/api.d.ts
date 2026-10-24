@@ -252,6 +252,28 @@ export interface components {
             /** Status */
             status: string;
         };
+        /** ProjectPlan */
+        ProjectPlan: {
+            /** Deliverable */
+            deliverable: string;
+            /** Id */
+            id: string;
+            /** Runnable Project Id */
+            runnable_project_id?: string | null;
+            /** Skill Ids */
+            skill_ids: string[];
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "graded" | "template" | "ai_suggested";
+            /** Steps */
+            steps: string[];
+            /** Title */
+            title: string;
+            /** Why */
+            why: string;
+        };
         /** ProjectRecommendationResponse */
         ProjectRecommendationResponse: {
             /** Project Id */
@@ -322,6 +344,8 @@ export interface components {
             job_quote: string;
             /** Label */
             label: string;
+            /** Project Plans */
+            project_plans?: components["schemas"]["ProjectPlan"][];
             requirement_type: components["schemas"]["RequirementType"];
             /** Resume Evidence */
             resume_evidence?: components["schemas"]["ResumeEvidence"][];

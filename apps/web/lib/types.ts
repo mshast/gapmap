@@ -2,6 +2,7 @@ import type { components } from "../../../gapmap/shared/contracts/api";
 
 export type Analysis = components["schemas"]["AnalysisResponse"];
 export type Requirement = components["schemas"]["Requirement"];
+export type ProjectPlan = components["schemas"]["ProjectPlan"];
 export type Readiness = components["schemas"]["ReadinessResponse"];
 export type Project = components["schemas"]["ProjectResponse"];
 export type ProjectTask = components["schemas"]["ProjectTask"];

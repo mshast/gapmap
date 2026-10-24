@@ -6,7 +6,7 @@ The extraction model deliberately has no scoring, status, action, or project fie
 from enum import StrEnum
 from typing import Annotated
 
-from pydantic import Field, StringConstraints, field_validator
+from pydantic import Field, StringConstraints, field_validator, model_validator
 
 from gapmap.apps.api.contracts import AnalysisDraft, RequirementType, StrictModel
 
@@ -79,6 +79,14 @@ _ALIASES = {
 }
 
 
+class ProjectIdea(StrictModel):
+    """A suggested portfolio project. Shown labeled as AI-suggested; never evidence."""
+
+    title: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=90)]
+    deliverable: ShortText
+    steps: list[ShortText] = Field(min_length=2, max_length=4)
+
+
 class ExtractedRequirement(StrictModel):
     label: ShortText
     job_quote: Quote
@@ -86,6 +94,16 @@ class ExtractedRequirement(StrictModel):
     requirement_type: RequirementType
     skill_ids: list[SkillID] = Field(min_length=1, max_length=9)
     resume_quotes: list[Quote] = Field(max_length=4)
+    # Required but nullable so strict structured output accepts the schema.
+    project_idea: ProjectIdea | None
+
+    @model_validator(mode="before")
+    @classmethod
+    def default_project_idea(cls, value: object) -> object:
+        # Older fixtures and providers that omit the field mean "no idea".
+        if isinstance(value, dict) and "project_idea" not in value:
+            return {**value, "project_idea": None}
+        return value
 
     @field_validator("skill_ids", mode="before")
     @classmethod

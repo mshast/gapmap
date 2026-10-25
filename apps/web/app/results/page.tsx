@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, Check, CircleHelp, Copy, LoaderCircle, Printer, Target } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, ArrowRight, Check, CircleHelp, Copy, LoaderCircle, Printer, RotateCcw, Target } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { StatusPill } from "@/components/StatusPill";
 import { useAppState } from "@/components/AppStateProvider";
@@ -10,10 +11,16 @@ import { getReadiness, isMockMode } from "@/lib/api";
 import { PlanCard } from "@/components/PlanCard";
 import { SessionExpiredNotice, isSessionExpired } from "@/components/SessionExpiredNotice";
 import { isEligibility, planSkills, plansForRequirements, skillLabel } from "@/lib/projectPlans";
-import type { EvidenceStatus } from "@/lib/types";
+import { initialState, type EvidenceStatus } from "@/lib/types";
 
 export default function ResultsPage() {
   const { state, setState, hydrated } = useAppState();
+  const router = useRouter();
+
+  function startNewAnalysis() {
+    setState(initialState);
+    router.push("/");
+  }
   const [loading, setLoading] = useState(!isMockMode);
   const [apiError, setApiError] = useState("");
   const [copied, setCopied] = useState(false);
@@ -145,6 +152,11 @@ export default function ResultsPage() {
           <div className="stage-header results-stage-header"><div><p className="stage-kicker">STEP 3 OF 3 · NEXT STEPS</p><h1>Your plan for {analysis.target_role}.</h1><p className="intro-copy">GapMap can&apos;t grade any skill in this posting yet, so there is no work-sample score. These projects build evidence for the gaps, biggest first.</p></div></div>
           {roadmapSection}
           {plansSection}
+          <div className="results-actions">
+            <button className="button button-outline" type="button" onClick={startNewAnalysis}>
+              <RotateCcw size={15} /> Analyze another role
+            </button>
+          </div>
         </section>
       </AppShell>
     );
@@ -193,7 +205,12 @@ export default function ResultsPage() {
         {roadmapSection}
 
         {plansSection}
-      </section>
-    </AppShell>
-  );
+          <div className="results-actions">
+            <button className="button button-outline" type="button" onClick={startNewAnalysis}>
+              <RotateCcw size={15} /> Analyze another role
+            </button>
+          </div>
+        </section>
+      </AppShell>
+    );
 }

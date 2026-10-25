@@ -494,3 +494,10 @@ h3 { font-size: 15px; line-height: 1.35; }
   }
 }
 
+
+/* Results actions */
+.results-actions {
+  display: flex;
+  justify-content: center;
+  padding: 36px 0 16px;
+}

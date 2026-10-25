@@ -1,7 +1,9 @@
 """Structured job extraction followed by deterministic evidence mapping."""
 
+import hashlib
 import os
 import re
+from collections import OrderedDict
 from importlib.resources import files
 
 from pydantic import ValidationError
@@ -23,9 +25,16 @@ from gapmap.apps.api.services.interfaces import AnalysisUnavailableError
 
 
 class StructuredAnalysisService:
-    def __init__(self, *, extractor: Extractor | None = None, demo_mode: bool = False) -> None:
+    def __init__(
+        self, *, extractor: Extractor | None = None, demo_mode: bool = False, cache_size: int = 32,
+    ) -> None:
         self._extractor = extractor
         self._demo_mode = demo_mode
+        # Re-analyzing the same resume and posting (a demo retake, a re-run after a
+        # session expired) reuses the extraction instead of spending provider tokens.
+        # Memory only, like the session store, so nothing outlives the process.
+        self._cache_size = max(0, cache_size)
+        self._cache: OrderedDict[str, ExtractionResult] = OrderedDict()
 
     @classmethod
     def from_env(cls) -> "StructuredAnalysisService":
@@ -50,9 +59,14 @@ class StructuredAnalysisService:
             extractor = None
         else:
             raise ValueError(f"Unsupported GAPMAP_LLM_PROVIDER: {provider}")
+        try:
+            cache_size = int(os.environ.get("GAPMAP_ANALYSIS_CACHE_SIZE", "32"))
+        except ValueError:
+            cache_size = 32
         return cls(
             extractor=extractor,
             demo_mode=os.environ.get("GAPMAP_DEMO_MODE", "").lower() in {"1", "true", "yes"},
+            cache_size=cache_size,
         )
 
     async def analyze(self, resume_text: str, job_text: str) -> AnalysisResult:
@@ -74,7 +88,13 @@ class StructuredAnalysisService:
                     "GAPMAP_LLM_PROVIDER=ollama, or alternatively set "
                     "GAPMAP_DEMO_MODE=1 and use GET /api/demo/fixture."
                 )
-            extracted = await self._extract(resume_text, job_text)
+            cache_key = hashlib.sha256(f"{resume_text}\0{job_text}".encode()).hexdigest()
+            cached = self._cache.get(cache_key)
+            if cached is not None:
+                self._cache.move_to_end(cache_key)
+                extracted = cached.model_copy(deep=True)
+            else:
+                extracted = await self._extract(resume_text, job_text)
 
         requirements, ideas, dropped_quotes = self._ground(extracted, resume_text, job_text)
         if len(requirements) < 5 and not self._demo_mode:
@@ -95,6 +115,12 @@ class StructuredAnalysisService:
                 "Fewer than five distinct requirements could be grounded in the posting. "
                 "Paste the complete internship posting and retry; unsupported excerpts were discarded."
             )
+        if not self._demo_mode and self._cache_size:
+            # Only extractions that grounded successfully are worth reusing.
+            self._cache[cache_key] = extracted.model_copy(deep=True)
+            self._cache.move_to_end(cache_key)
+            while len(self._cache) > self._cache_size:
+                self._cache.popitem(last=False)
         if dropped_quotes:
             warnings.append("Unsupported, duplicate, negative, or unrelated proposed excerpts were discarded.")
         project = select_project(requirements)

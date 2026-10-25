@@ -26,7 +26,7 @@ A screen-recording script for the live web app backed by the real API. The timin
 
 3. Open <http://localhost:3000> in a fresh incognito window. The app saves its session in `localStorage`, and the API keeps sessions only in memory, so restart the API and use a new window before every take. The top-right chip must read **API connected**, not "Demo fixtures".
 4. Zoom the browser to about 110–125% so text is readable in the video.
-5. Keep the three queries below in a text file to paste. Typing them on camera takes too long. Monaco may show autocomplete popups, so press `Esc` before clicking Submit.
+5. Keep the three queries below in a text file to paste. Typing them on camera takes too long. Monaco may show autocomplete popups, so press `Esc` before clicking Submit. (You can also click **Format query** in the toolbar to demonstrate automatic query formatting).
 
 **T1: completed orders with regions (35/35)**
 
@@ -101,7 +101,7 @@ In demo mode the Readiness page shows a **Demo fixture** banner, so the video ne
 
 **Say:** "Aggregate refunds per order first, then join, and every hidden case passes."
 
-The T3 sidebar shows a checkmark after the failing submission too. It means "submitted", not "passed", so don't point at it.
+The T3 sidebar checkmark appears now that all visible checks pass, confirming complete task mastery.
 
 ## 2:10–2:35 — Changed evidence and roadmap
 

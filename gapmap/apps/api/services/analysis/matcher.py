@@ -34,8 +34,13 @@ GAP_FACTOR = {
 
 def build_roadmap(requirements: list[Requirement]) -> list[RoadmapItem]:
     # Python's stable sort preserves original posting order on equal priority.
+    # Eligibility facts (degree, graduation date, authorization) are not skills
+    # a project can build, so they never become next actions.
     ordered = sorted(
-        (item for item in requirements if GAP_FACTOR[item.evidence_status]),
+        (
+            item for item in requirements
+            if GAP_FACTOR[item.evidence_status] and item.skill_ids != ["eligibility"]
+        ),
         key=lambda item: -(item.importance * GAP_FACTOR[item.evidence_status]),
     )
     roadmap = []

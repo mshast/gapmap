@@ -28,6 +28,7 @@ from gapmap.apps.api.dependencies import (
 from gapmap.apps.api.fixtures.loader import load_demo_fixture
 from gapmap.apps.api.services.interfaces import AnalysisService, ProjectService
 from gapmap.apps.api.services.analysis.pdf_extract import MAX_PDF_BYTES, PDFInputError, extract_pdf_text
+from gapmap.apps.api.services.demo_analysis import DemoAnalysisService
 from gapmap.apps.api.session_store import InMemorySessionStore
 
 
@@ -54,6 +55,13 @@ async def analyze(
     store: StoreDependency,
 ) -> AnalysisResponse:
     draft = await analysis_service.analyze(request.resume_text, request.job_description)
+    return store.create_analysis(draft)
+
+
+@router.post("/analyze/demo", response_model=AnalysisResponse)
+async def analyze_demo(request: AnalyzeRequest, store: StoreDependency) -> AnalysisResponse:
+    """Provider-free analysis of the bundled posting, with the supplied resume."""
+    draft = await DemoAnalysisService().analyze(request.resume_text, request.job_description)
     return store.create_analysis(draft)
 
 

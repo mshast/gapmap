@@ -56,11 +56,12 @@ def make_service(session):
 def make_api():
     """The shared app with this router mounted, as the integration hand-off describes."""
 
-    def build(interview_client) -> tuple[TestClient, FastAPI]:
+    def build(interview_client, *, allow_demo_fallback: bool = False) -> tuple[TestClient, FastAPI]:
         store = InMemorySessionStore()
         service = InterviewService(
             interview_client, InMemoryInterviewStore(),
             SessionStoreAnalysisSource(store),
+            allow_demo_fallback=allow_demo_fallback,
         )
         app = create_app(
             analysis_service=StructuredAnalysisService(demo_mode=True),

@@ -41,6 +41,30 @@ def test_extraction_schema_accepts_more_than_eight_requirements(extraction_resul
     assert len(ExtractionResult.model_validate(data).requirements) == 10
 
 
+def test_provider_free_demo_analysis_route_uses_the_bundled_posting():
+    fixture = load_demo_fixture()
+    with TestClient(create_app()) as client:
+        response = client.post("/api/analyze/demo", json={
+            "resume_text": fixture.resume_text, "job_description": fixture.job_description,
+        })
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["analysis_mode"] == "demo"
+    assert len(body["requirements"]) >= 5
+    assert "no AI service ran" in body["warnings"][0]
+
+
+def test_demo_analysis_route_rejects_a_non_bundled_posting():
+    with TestClient(create_app()) as client:
+        response = client.post("/api/analyze/demo", json={
+            "resume_text": "A student resume.", "job_description": "A different posting.",
+        })
+
+    assert response.status_code == 503
+    assert "bundled posting" in response.json()["detail"]
+
+
 async def test_canonical_demo_has_five_grounded_requirements_and_honest_evidence():
     fixture = load_demo_fixture()
     result = await DemoAnalysisService().analyze(fixture.resume_text, fixture.job_description)

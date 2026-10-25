@@ -46,6 +46,8 @@ class InterviewQuestion(StrictModel):
 class StartInterviewRequest(StrictModel):
     session_id: UUID
     analysis_id: UUID
+    # "demo" keeps the current analysis but skips the provider entirely.
+    mode: InterviewMode | None = None
 
 
 class StartInterviewResponse(StrictModel):

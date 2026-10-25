@@ -39,6 +39,19 @@ class InterviewLLMError(InterviewUnavailableError):
     """The provider failed or returned invalid output twice. Never carries provider bodies."""
 
 
+class InterviewRateLimited(InterviewLLMError):
+    """The provider is out of credits or rate limited; demo mode can continue."""
+
+    def __init__(self, retry_after: int | None = None) -> None:
+        message = "The interview AI is out of credits or rate limited."
+        if retry_after:
+            message += f" Try again in {retry_after} seconds, or switch to demo mode."
+        else:
+            message += " Switch to demo mode to keep practicing."
+        super().__init__(message)
+        self.retry_after = retry_after
+
+
 class _InvalidOutput(Exception):
     pass
 
@@ -128,6 +141,8 @@ class InterviewLLMClient:
                 self._base_url,
                 headers={"Authorization": f"Bearer {self._api_key}"}, json=payload,
             )
+            if response.status_code in {402, 429}:
+                raise InterviewRateLimited(_retry_after(response))
             response.raise_for_status()
         try:
             if len(response.content) > 128_000:
@@ -145,6 +160,27 @@ class InterviewLLMClient:
         except (ValueError, KeyError, IndexError, TypeError, ValidationError):
             # Provider bodies may echo the resume or answer. Never expose them.
             raise _InvalidOutput from None
+
+
+def _retry_after(response: httpx.Response) -> int | None:
+    value = response.headers.get("retry-after")
+    if value is None:
+        return None
+    try:
+        seconds = int(value)
+    except ValueError:
+        return None
+    return seconds if 0 < seconds <= 86_400 else None
+
+
+def interview_mode_from_env() -> str:
+    """Interview-only mode: auto (quota fallback), live (strict), or demo."""
+    if os.environ.get("GAPMAP_DEMO_MODE", "").lower() in {"1", "true", "yes"}:
+        return "demo"
+    mode = os.environ.get("GAPMAP_INTERVIEW_MODE", "auto").strip().lower()
+    if mode not in {"auto", "live", "demo"}:
+        raise ValueError(f"Unsupported GAPMAP_INTERVIEW_MODE: {mode}")
+    return mode
 
 
 def template_questions(requirements: list[Requirement]) -> list[QuestionDraft]:
@@ -283,8 +319,8 @@ def _short(sentence: str, max_words: int = 25, max_chars: int = 400) -> str | No
 
 
 def client_from_env() -> InterviewClient:
-    """Demo only when explicitly enabled; otherwise the live client, which errors without a key."""
-    if os.environ.get("GAPMAP_DEMO_MODE", "").lower() in {"1", "true", "yes"}:
+    """Demo when explicitly enabled; otherwise the live client, which errors without a key."""
+    if interview_mode_from_env() == "demo":
         return DemoInterviewClient()
     provider = os.environ.get("GAPMAP_LLM_PROVIDER", "openai").strip().lower()
     if provider == "demo":

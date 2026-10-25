@@ -217,6 +217,15 @@ export async function analyzePdf(file: File, jobDescription: string): Promise<An
   return request("/api/analyze/pdf", { method: "POST", body });
 }
 
+export async function analyzeDemo(resumeText: string, jobDescription: string): Promise<Analysis> {
+  if (isMockMode) return analyze(resumeText, jobDescription);
+  return request("/api/analyze/demo", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ resume_text: resumeText, job_description: jobDescription }),
+  });
+}
+
 export async function getProject(projectId: string): Promise<Project> {
   if (isMockMode) return demoProject;
   return request(`/api/projects/${encodeURIComponent(projectId)}`);
@@ -328,12 +337,16 @@ export async function generateProjectBriefs(
 
 const interviewNeedsApi = "Interview practice needs the GapMap API. Start it (GAPMAP_DEMO_MODE=1 for the offline demo) and run the web app with NEXT_PUBLIC_GAPMAP_MOCK=false.";
 
-export async function startInterview(sessionId: string, analysisId: string): Promise<InterviewStart> {
+export async function startInterview(
+  sessionId: string,
+  analysisId: string,
+  mode?: InterviewStart["mode"],
+): Promise<InterviewStart> {
   if (isMockMode) throw new Error(interviewNeedsApi);
   return request("/api/interview/start", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ session_id: sessionId, analysis_id: analysisId }),
+    body: JSON.stringify({ session_id: sessionId, analysis_id: analysisId, ...(mode ? { mode } : {}) }),
   });
 }
 

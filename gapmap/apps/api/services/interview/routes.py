@@ -58,7 +58,9 @@ async def _public_errors(call: Awaitable[ResultT]) -> ResultT:
 async def start_interview(
     request: StartInterviewRequest, service: InterviewDependency
 ) -> StartInterviewResponse:
-    return await _public_errors(service.start(request.session_id, request.analysis_id))
+    return await _public_errors(
+        service.start(request.session_id, request.analysis_id, request.mode)
+    )
 
 
 @router.post("/{interview_id}/answer", response_model=AnswerFeedback)

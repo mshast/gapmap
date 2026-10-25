@@ -120,6 +120,7 @@ h3 { font-size: 15px; line-height: 1.35; }
 .can-test { color: var(--forest); }
 .not-covered svg { flex: none; }
 .project-callout { margin-top: 28px; padding: 22px; display: grid; grid-template-columns: 70px 1fr auto; align-items: center; gap: 17px; background: #e6ede5; border: 1px solid #cfd9d0; }
+.callout-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
 .callout-index { color: var(--rust); font: 11px/1.55 var(--mono); }
 .callout-content .eyebrow { margin-bottom: 7px; }
 .callout-content h2 { margin: 0; font-size: 21px; }

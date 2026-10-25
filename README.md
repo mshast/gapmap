@@ -80,6 +80,8 @@ npm run dev --prefix apps/web
 
 Open <http://localhost:3000>. To use the API for analysis, set `NEXT_PUBLIC_GAPMAP_MOCK=false` in `apps/web/.env.local`; set `GAPMAP_API_URL` if the API is not at `http://127.0.0.1:8000`. With the API running, project run and submit execute and grade SQL on the server.
 
+The input page offers both `Analyze evidence` (live) and `Demo analysis` (provider-free, bundled posting). Use the demo action when the configured key is out of credits; it still evaluates the resume you pasted.
+
 The readiness page loads project briefs from `GET /api/project-briefs` and offers one explicit `Generate tailored projects` action in live mode. Every brief is labeled `Tailored from this posting` or `Fallback project template`, and the project detail page renders the scenario, inputs, outputs, constraints, deliverables, and each milestone's work, acceptance checks, tests, and evidence. In fixture mode the page shows labeled fixture briefs, explains that the pasted posting was not analyzed, and hides the generate action.
 
 ## Enable live AI extraction
@@ -99,6 +101,7 @@ Use `/docs` to submit a full internship posting and your pasted resume or PDF. L
 | Variable | Default | Purpose |
 | --- | --- | --- |
 | `GAPMAP_DEMO_MODE` | disabled | `1`, `true`, or `yes` explicitly selects deterministic, fixture-only analysis and makes no AI call. |
+| `GAPMAP_INTERVIEW_MODE` | `auto` | `auto` falls back to a labeled demo when the interview provider is out of credits or rate limited. `live` keeps provider failures as `503`; `demo` makes no provider call while still using the analyzed requirements. |
 | `GAPMAP_LLM_PROVIDER` | `openai` | `openai`, `groq`, `ollama`, or `demo`. `groq` uses Groq's OpenAI-compatible endpoint. |
 | `OPENAI_API_KEY` | unset | Required only when `GAPMAP_LLM_PROVIDER=openai`. |
 | `OPENAI_MODEL` | `gpt-4o-mini` | Structured-output model used for extraction. |
@@ -128,6 +131,8 @@ The interview flow uses the stored analysis requirements, never the raw resume o
 
 Answers are scored 1–4 on relevance, specificity, structure, impact, and accuracy (technical questions only). Every cited answer quote is checked against the submitted text. One follow-up is allowed per main question. `GET /api/interview/{interview_id}/summary` averages the criteria and returns practice suggestions. Feedback never changes readiness or competency evidence. Demo mode is explicitly labeled and uses deterministic templates and heuristics; live mode uses the configured Groq or OpenAI provider.
 
+Demo mode is available for interviews without making the whole application fixture-only. Send `{"mode": "demo"}` to `POST /api/interview/start`, click **Use demo mode** on the interview page, or set `GAPMAP_INTERVIEW_MODE=demo`. It reads the current analysis, so questions stay grounded in the actual resume and posting even with no provider credits. With the default `auto`, a `402`/`429` during question generation or answer feedback switches that interview to demo, keeps answers already submitted, and labels the remaining feedback as demo. `GAPMAP_INTERVIEW_MODE=live` disables the automatic fallback and returns the provider error as `503`.
+
 The web app exposes this at `/interview`, linked from the main navigation and the readiness page.
 
 ## Implemented routes
@@ -135,12 +140,13 @@ The web app exposes this at `/interview`, linked from the main navigation and th
 - `GET /api/health`
 - `GET /api/demo/fixture`
 - `POST /api/analyze` with JSON `{resume_text, job_description}`
+- `POST /api/analyze/demo` with the same JSON: provider-free analysis of the bundled posting, so the recording flow still runs when credits are exhausted
 - `POST /api/analyze/pdf` with multipart fields `resume_file` and `job_description`
 - `GET /api/projects/recommended?analysis_id=...`
 - `GET /api/readiness?session_id=...`
 - `GET /api/project-briefs?session_id=...&analysis_id=...`: cached or deterministic briefs; never calls a provider
 - `POST /api/project-briefs/generate` with JSON `{session_id, analysis_id}`: at most one batched provider request per analysis
-- `POST /api/interview/start` with JSON `{session_id, analysis_id}`
+- `POST /api/interview/start` with JSON `{session_id, analysis_id, mode?}`; `mode: "demo"` skips the provider
 - `POST /api/interview/{interview_id}/answer` with JSON `{question_id, answer_text}`
 - `GET /api/interview/{interview_id}/summary`
 - `GET /api/projects/{project_id}`

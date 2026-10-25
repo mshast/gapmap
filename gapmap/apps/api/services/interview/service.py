@@ -10,9 +10,12 @@ from gapmap.apps.api.contracts import Requirement
 from gapmap.apps.api.services.analysis.evidence import normalize_whitespace
 from gapmap.apps.api.services.interfaces import PublicServiceError
 from gapmap.apps.api.services.interview.llm_client import (
+    DemoInterviewClient,
     InterviewClient,
     InterviewLLMError,
+    InterviewRateLimited,
     client_from_env,
+    interview_mode_from_env,
     template_questions,
 )
 from gapmap.apps.api.services.interview.schema import (
@@ -21,6 +24,7 @@ from gapmap.apps.api.services.interview.schema import (
     AnswerHighlight,
     AnswerRequest,
     CriterionAverage,
+    InterviewMode,
     InterviewQuestion,
     InterviewRecord,
     InterviewSummary,
@@ -60,40 +64,68 @@ class InterviewConflictError(PublicServiceError):
 class InterviewService:
     def __init__(
         self, client: InterviewClient, store: InterviewStore, analysis_source: AnalysisSource,
+        *, demo_client: InterviewClient | None = None, allow_demo_fallback: bool = False,
     ) -> None:
         self._client = client
+        self._demo_client = demo_client or DemoInterviewClient()
+        # A quota failure is safe to continue from because demo feedback is
+        # deterministic and labeled. Other provider failures stay explicit 503s.
+        self._allow_demo_fallback = allow_demo_fallback and client.mode != "demo"
         self._store = store
         self._analysis = analysis_source
 
     @classmethod
     def from_env(cls, session_store: InMemorySessionStore) -> "InterviewService":
-        return cls(client_from_env(), InMemoryInterviewStore(), SessionStoreAnalysisSource(session_store))
+        client = client_from_env()
+        return cls(
+            client,
+            InMemoryInterviewStore(),
+            SessionStoreAnalysisSource(session_store),
+            demo_client=DemoInterviewClient(),
+            allow_demo_fallback=interview_mode_from_env() == "auto" and client.mode == "llm",
+        )
 
-    async def start(self, session_id: UUID, analysis_id: UUID) -> StartInterviewResponse:
+    async def start(
+        self, session_id: UUID, analysis_id: UUID, mode: InterviewMode | None = None,
+    ) -> StartInterviewResponse:
         requirements = self._analysis.load_requirements(session_id, analysis_id)
         if not requirements:
             raise InterviewNotFoundError("Analysis not found for this session.")
         # Degree, graduation date, and work authorization are not interview topics.
         requirements = [item for item in requirements if item.skill_ids != ["eligibility"]]
-        candidates = await self._verified_candidates(requirements)
+        client = self._demo_client if mode == "demo" else self._client
+        record_mode = client.mode
+        try:
+            candidates = await self._verified_candidates(requirements, client)
+        except InterviewRateLimited:
+            if mode == "demo" or not self._allow_demo_fallback:
+                raise
+            client = self._demo_client
+            record_mode = "demo"
+            candidates = await self._verified_candidates(requirements, client)
         questions = [
             InterviewQuestion(id=f"q{index}", **draft.model_dump())
             for index, draft in enumerate(select_questions(candidates), start=1)
         ]
         record = InterviewRecord(
             id=uuid4(), session_id=session_id, analysis_id=analysis_id,
-            mode=self._client.mode, questions=questions,
+            mode=record_mode, questions=questions,
         )
         self._store.save_interview(record)
         return StartInterviewResponse(interview_id=record.id, questions=questions, mode=record.mode)
 
-    async def _verified_candidates(self, requirements: list[Requirement]) -> list[QuestionDraft]:
+    async def _verified_candidates(
+        self, requirements: list[Requirement], client: InterviewClient,
+    ) -> list[QuestionDraft]:
         # A failure on the first call is a clear error, never a silent fixture.
-        proposed = await self._client.generate_questions(requirements)
+        proposed = await client.generate_questions(requirements)
         verified = _verify_all(proposed, requirements)
         if not _mix_satisfied(verified):
             try:
-                verified += _verify_all(await self._client.generate_questions(requirements), requirements)
+                verified += _verify_all(await client.generate_questions(requirements), requirements)
+            except InterviewRateLimited:
+                # A quota failure must reach start(), where demo can take over.
+                raise
             except InterviewLLMError:
                 pass
         # Model questions come first; grounded templates only fill remaining gaps.
@@ -108,11 +140,23 @@ class InterviewService:
             raise InterviewNotFoundError("Question not found in this interview.")
         _ensure_unanswered(record, question.id)
         allow_follow_up = question.id not in record.follow_up_parents
-        draft = await self._client.evaluate(question, request.answer_text, allow_follow_up=allow_follow_up)
+        mode = record.mode
+        try:
+            active = self._demo_client if mode == "demo" else self._client
+            draft = await active.evaluate(question, request.answer_text, allow_follow_up=allow_follow_up)
+        except InterviewRateLimited:
+            if mode == "demo" or not self._allow_demo_fallback:
+                raise
+            mode = "demo"
+            draft = await self._demo_client.evaluate(
+                question, request.answer_text, allow_follow_up=allow_follow_up
+            )
 
         # Reload after the provider call so a concurrent answer cannot be overwritten.
         record = self._load(interview_id)
         _ensure_unanswered(record, question.id)
+        if mode == "demo":
+            record.mode = "demo"
         follow_up = draft.follow_up if allow_follow_up else None
         follow_up_id = None
         if follow_up is not None:

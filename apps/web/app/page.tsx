@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowRight, Check, CircleHelp, FileText, LoaderCircle, Sparkles, Upload, X } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { useAppState } from "@/components/AppStateProvider";
-import { analyze, analyzePdf, getDemoFixture, isMockMode } from "@/lib/api";
+import { analyze, analyzeDemo, analyzePdf, getDemoFixture, isMockMode } from "@/lib/api";
 import { extractPdfText } from "@/lib/pdf";
 
 export default function HomePage() {
@@ -14,6 +14,7 @@ export default function HomePage() {
   const fileInput = useRef<HTMLInputElement>(null);
   const [loadingDemo, setLoadingDemo] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
+  const [demoAnalyzing, setDemoAnalyzing] = useState(false);
   const [error, setError] = useState("");
   const [fileLabel, setFileLabel] = useState("");
   const [resumeFile, setResumeFile] = useState<File | null>(null);
@@ -72,6 +73,20 @@ export default function HomePage() {
       setError(caught instanceof Error ? caught.message : "We could not analyze these inputs. Please try again.");
     } finally {
       setAnalyzing(false);
+    }
+  }
+
+  async function onDemoAnalyze() {
+    setError("");
+    setDemoAnalyzing(true);
+    try {
+      const result = await analyzeDemo(state.resumeText, state.jobText);
+      setState((current) => ({ ...current, analysis: result, project: null, readiness: null, previews: {}, submissions: {}, plans: null, interview: null }));
+      router.push("/readiness");
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "The demo analysis could not run. Use the bundled example posting.");
+    } finally {
+      setDemoAnalyzing(false);
     }
   }
 
@@ -161,7 +176,10 @@ export default function HomePage() {
             </button>
             <div className="submit-actions">
               <span className="submit-note">{isMockMode ? "Using labeled demo fixtures" : "Connected to GapMap API"}</span>
-              <button className="button button-primary" type="submit" disabled={!canAnalyze || analyzing || !hydrated}>
+              {!isMockMode && <button className="button button-text" type="button" onClick={onDemoAnalyze} disabled={!canAnalyze || demoAnalyzing || analyzing || !hydrated} title="Provider-free analysis of the bundled demo posting">
+                {demoAnalyzing ? <><LoaderCircle className="spin" size={16} /> Reading demo</> : <>Demo analysis</>}
+              </button>}
+              <button className="button button-primary" type="submit" disabled={!canAnalyze || analyzing || demoAnalyzing || !hydrated}>
                 {analyzing ? <><LoaderCircle className="spin" size={17} /> Reading inputs</> : <>Analyze evidence <ArrowRight size={17} /></>}
               </button>
             </div>

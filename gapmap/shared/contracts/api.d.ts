@@ -21,6 +21,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/analyze/demo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Analyze Demo
+         * @description Provider-free analysis of the bundled posting, with the supplied resume.
+         */
+        post: operations["analyze_demo_api_analyze_demo_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/analyze/pdf": {
         parameters: {
             query?: never;
@@ -707,6 +727,8 @@ export interface components {
              * Format: uuid
              */
             analysis_id: string;
+            /** Mode */
+            mode?: ("llm" | "demo") | null;
             /**
              * Session Id
              * Format: uuid
@@ -791,6 +813,39 @@ export interface components {
 export type $defs = Record<string, never>;
 export interface operations {
     analyze_api_analyze_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnalyzeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnalysisResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    analyze_demo_api_analyze_demo_post: {
         parameters: {
             query?: never;
             header?: never;

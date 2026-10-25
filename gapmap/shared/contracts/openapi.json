@@ -1335,6 +1335,21 @@
             "title": "Analysis Id",
             "type": "string"
           },
+          "mode": {
+            "anyOf": [
+              {
+                "enum": [
+                  "llm",
+                  "demo"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mode"
+          },
           "session_id": {
             "format": "uuid",
             "title": "Session Id",
@@ -1562,6 +1577,45 @@
           }
         },
         "summary": "Analyze"
+      }
+    },
+    "/api/analyze/demo": {
+      "post": {
+        "description": "Provider-free analysis of the bundled posting, with the supplied resume.",
+        "operationId": "analyze_demo_api_analyze_demo_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalyzeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Analyze Demo"
       }
     },
     "/api/analyze/pdf": {

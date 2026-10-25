@@ -10,7 +10,6 @@ from gapmap.apps.api.fixtures.loader import load_demo_fixture
 from gapmap.apps.api.main import create_app
 from gapmap.apps.api.services.analysis import StructuredAnalysisService
 from gapmap.apps.api.services.interview.llm_client import template_questions
-from gapmap.apps.api.services.interview.routes import router
 from gapmap.apps.api.services.interview.schema import QuestionDraft
 from gapmap.apps.api.services.interview.service import InterviewService
 from gapmap.apps.api.services.interview.store import InMemoryInterviewStore, SessionStoreAnalysisSource
@@ -59,7 +58,6 @@ def make_api():
 
     def build(interview_client) -> tuple[TestClient, FastAPI]:
         app = create_app(analysis_service=StructuredAnalysisService(demo_mode=True))
-        app.include_router(router)
         app.state.interview_service = InterviewService(
             interview_client, InMemoryInterviewStore(),
             SessionStoreAnalysisSource(app.state.session_store),

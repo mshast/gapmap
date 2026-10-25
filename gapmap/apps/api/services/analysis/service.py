@@ -15,6 +15,7 @@ from gapmap.apps.api.services.analysis.evidence import (
 from gapmap.apps.api.services.analysis.llm_client import ExtractionError, Extractor, StructuredLLMClient
 from gapmap.apps.api.services.analysis.ollama_client import OllamaStructuredClient
 from gapmap.apps.api.services.analysis.matcher import apply_coverage, build_roadmap, select_project
+from gapmap.apps.api.services.analysis.plans import plans_for
 from gapmap.apps.api.services.analysis.schema import AnalysisResult, ExtractionResult
 from gapmap.apps.api.services.interfaces import AnalysisUnavailableError
 
@@ -90,6 +91,7 @@ class StructuredAnalysisService:
             normalized_job.find(normalize_whitespace(item.job_quote))
         ))
         ids: dict[str, int] = {}
+        ideas = {}
         dropped_quotes = False
         for item in ordered:
             job_quote = verified_excerpt(item.job_quote, job_text)
@@ -118,6 +120,7 @@ class StructuredAnalysisService:
                 resume_evidence=evidence, evidence_status=initial_status(evidence),
                 verification_capability=VerificationCapability.NOT_ASSESSABLE,
             ))
+            ideas[requirements[-1].id] = item.project_idea
 
         if len(requirements) < 5:
             raise AnalysisUnavailableError(
@@ -129,6 +132,7 @@ class StructuredAnalysisService:
         project = select_project(requirements)
         for requirement in requirements:
             apply_coverage(requirement, project)
+            requirement.project_plans = plans_for(requirement, project, ideas[requirement.id])
         target_role = verified_excerpt(extracted.target_role, job_text) or "Software Engineering Intern"
         return AnalysisResult(
             target_role=target_role, requirements=requirements,

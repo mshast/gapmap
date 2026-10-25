@@ -10,6 +10,8 @@ from gapmap.apps.api.services.interfaces import (
     AnalysisService,
     ProjectService,
 )
+from gapmap.apps.api.services.interview.routes import router as interview_router
+from gapmap.apps.api.services.interview.service import InterviewService
 from gapmap.apps.api.services.projects.routes import SqlProjectService
 from gapmap.apps.api.session_store import InMemorySessionStore
 
@@ -19,6 +21,7 @@ def create_app(
     analysis_service: AnalysisService | None = None,
     project_service: ProjectService | None = None,
     session_store: InMemorySessionStore | None = None,
+    interview_service: InterviewService | None = None,
 ) -> FastAPI:
     application = FastAPI(title="GapMap API", version="0.1.0")
     application.state.analysis_service = (
@@ -26,6 +29,9 @@ def create_app(
     )
     application.state.project_service = project_service or SqlProjectService()
     application.state.session_store = session_store or InMemorySessionStore()
+    application.state.interview_service = (
+        interview_service or InterviewService.from_env(application.state.session_store)
+    )
     application.add_middleware(
         CORSMiddleware,
         allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
@@ -34,6 +40,7 @@ def create_app(
     )
     install_error_handlers(application)
     application.include_router(router)
+    application.include_router(interview_router)
     return application
 
 

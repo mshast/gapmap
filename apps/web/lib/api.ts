@@ -7,6 +7,7 @@ import type {
   Readiness,
   RunResult,
   Submission,
+  InterviewQuestion,
 } from "@/lib/types";
 
 export const isMockMode = process.env.NEXT_PUBLIC_GAPMAP_MOCK !== "false";
@@ -209,7 +210,6 @@ const sameText = (a: string, b: string) => a.split(/\s+/).join(" ").trim() === b
 
 export async function analyze(resumeText: string, jobDescription: string): Promise<Analysis> {
   if (isMockMode) {
-    // Fixtures describe only the example posting; never pass them off as an analysis of another one.
     if (!sameText(jobDescription, demoJob)) {
       throw new Error("Demo mode only analyzes the example posting. To analyze your own, run the API and start the web app with NEXT_PUBLIC_GAPMAP_MOCK=false.");
     }
@@ -329,10 +329,53 @@ export async function getReadiness(sessionId: string): Promise<Readiness> {
   return request(`/api/readiness?session_id=${encodeURIComponent(sessionId)}`);
 }
 
-const interviewNeedsApi = "Interview practice needs the GapMap API. Start it (GAPMAP_DEMO_MODE=1 for the offline demo) and run the web app with NEXT_PUBLIC_GAPMAP_MOCK=false.";
+const demoInterviewQuestions: InterviewQuestion[] = [
+  {
+    id: "q1",
+    type: "behavioral",
+    question: "You built a Python service that validates campus event data and produces weekly reports. What was the most challenging data quality issue you encountered, and how did you resolve it?",
+    grounding_quote: "Built a Python service that validates campus event data and produces weekly reports.",
+    requirement_id: null,
+  },
+  {
+    id: "q2",
+    type: "behavioral",
+    question: "You collaborated with three classmates to test and document the service. Can you describe how your team coordinated test coverage and documentation standards?",
+    grounding_quote: "Collaborated with three classmates to test and document the service.",
+    requirement_id: null,
+  },
+  {
+    id: "q3",
+    type: "technical",
+    question: "How do you structure Python code when processing data batches so that validation failures don't halt the entire data pipeline?",
+    grounding_quote: "Experience with Python is required.",
+    requirement_id: "req-python",
+  },
+  {
+    id: "q4",
+    type: "technical",
+    question: "What is the difference between an INNER JOIN and a LEFT JOIN in SQL, and what happens to customer records when an order has multiple associated refunds?",
+    grounding_quote: "Experience with SQL databases is required.",
+    requirement_id: "req-sql",
+  },
+  {
+    id: "q5",
+    type: "gap_probe",
+    question: "Walk me through how you would approach containerizing a web service with Docker if you had not deployed it to production before.",
+    grounding_quote: "Familiarity with Docker containers is preferred.",
+    requirement_id: "req-docker",
+  },
+];
 
 export async function startInterview(sessionId: string, analysisId: string): Promise<InterviewStart> {
-  if (isMockMode) throw new Error(interviewNeedsApi);
+  if (isMockMode) {
+    return {
+      interview_id: "mock-interview-session",
+      mode: "demo",
+      disclaimer: "Practice feedback only. This is an offline demo and does not change verified skill evidence.",
+      questions: demoInterviewQuestions,
+    };
+  }
   return request("/api/interview/start", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -341,7 +384,58 @@ export async function startInterview(sessionId: string, analysisId: string): Pro
 }
 
 export async function answerInterview(interviewId: string, questionId: string, answerText: string): Promise<InterviewFeedback> {
-  if (isMockMode) throw new Error(interviewNeedsApi);
+  if (isMockMode) {
+    const wordCount = answerText.trim().split(/\s+/).filter(Boolean).length;
+    return {
+      question_id: questionId,
+      mode: "demo",
+      disclaimer: "Practice feedback only. This is an offline demo.",
+      scores: [
+        {
+          criterion: "relevance",
+          max: 4,
+          score: wordCount >= 15 ? 4 : 2,
+          comment: wordCount >= 15 ? "Directly addresses the prompt and relates to the project context." : "A bit brief; try to elaborate more on the specific context.",
+          answer_quote: answerText.slice(0, 80),
+        },
+        {
+          criterion: "specificity",
+          max: 4,
+          score: wordCount >= 30 ? 4 : 3,
+          comment: wordCount >= 30 ? "Great job naming specific steps, tools, and technical choices." : "Good start; mention specific libraries, inputs, or edge cases you handled.",
+          answer_quote: null,
+        },
+        {
+          criterion: "structure",
+          max: 4,
+          score: wordCount >= 25 ? 3 : 2,
+          comment: "Organized thought process. Structure with Situation, Task, Action, and Result (STAR) makes it even stronger.",
+          answer_quote: null,
+        },
+        {
+          criterion: "impact",
+          max: 4,
+          score: wordCount >= 40 ? 3 : 2,
+          comment: "Conclude with the measurable outcome or what you learned from the experience.",
+          answer_quote: null,
+        },
+        {
+          criterion: "accuracy",
+          max: 4,
+          score: 3,
+          comment: "Conceptually sound and matches standard industry engineering practices.",
+          answer_quote: null,
+        },
+      ],
+      improvements: [
+        "Include one quantifiable metric (e.g. number of records processed or time saved).",
+        "Explicitly articulate the trade-offs of your chosen technical approach.",
+      ],
+      suggested_rewrite: `In my project, ${answerText.trim().slice(0, 120)}... Specifically, we handled validation by establishing clear schemas upfront, which prevented malformed records from reaching downstream reports.`,
+      follow_up: null,
+      follow_up_question_id: null,
+    };
+  }
   return request(`/api/interview/${encodeURIComponent(interviewId)}/answer`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -350,6 +444,36 @@ export async function answerInterview(interviewId: string, questionId: string, a
 }
 
 export async function getInterviewSummary(interviewId: string): Promise<InterviewSummary> {
-  if (isMockMode) throw new Error(interviewNeedsApi);
+  if (isMockMode) {
+    return {
+      interview_id: interviewId,
+      mode: "demo",
+      disclaimer: "Practice feedback only. This is an offline demo.",
+      total_questions: demoInterviewQuestions.length,
+      answered_count: demoInterviewQuestions.length,
+      criterion_averages: [
+        { criterion: "relevance", max: 4, average: 3.5, answers_scored: 5 },
+        { criterion: "specificity", max: 4, average: 3.2, answers_scored: 5 },
+        { criterion: "structure", max: 4, average: 3.0, answers_scored: 5 },
+        { criterion: "impact", max: 4, average: 2.8, answers_scored: 5 },
+        { criterion: "accuracy", max: 4, average: 3.4, answers_scored: 5 },
+      ],
+      strongest_answer: {
+        question_id: "q1",
+        question: demoInterviewQuestions[0].question,
+        average: 3.6,
+      },
+      weakest_answer: {
+        question_id: "q5",
+        question: demoInterviewQuestions[4].question,
+        average: 2.8,
+      },
+      practice_suggestions: [
+        "Structure behavioral answers using the STAR method (Situation, Task, Action, Result).",
+        "Quantify your impact: mention concrete numbers (e.g., test suite runtime, volume of rows).",
+        "For gaps like Docker, emphasize foundational concepts (reproducibility, image layering) and how quickly you pick up new tools.",
+      ],
+    };
+  }
   return request(`/api/interview/${encodeURIComponent(interviewId)}/summary`);
 }

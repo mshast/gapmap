@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ArrowLeft, ArrowRight, Check, CirclePlay, LoaderCircle, Send, Table2, TriangleAlert } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { SqlEditor } from "@/components/SqlEditor";
+import { SessionExpiredNotice, isSessionExpired } from "@/components/SessionExpiredNotice";
 import { useAppState } from "@/components/AppStateProvider";
 import { getProject, isMockMode, runQuery, submitTask } from "@/lib/api";
 import type { Project, ProjectTask, RunResult } from "@/lib/types";
@@ -120,7 +121,7 @@ export default function ProjectPage() {
             <div className="editor-toolbar"><span>QUERY EDITOR <span className="editor-language">SQL</span></span><button className="text-button" type="button" onClick={() => setQuery(task.id, task.starter_sql)}>Reset to starter</button></div>
             <SqlEditor label={`SQL editor for ${task.title}`} value={query} onChange={(value) => setQuery(task.id, value)} />
             <div className="editor-actions"><button className="button button-outline" onClick={runPreview} disabled={running || submitting}>{running ? <><LoaderCircle className="spin" size={16} /> Running</> : <><CirclePlay size={16} /> Run preview</>}</button><button className="button button-primary" onClick={submit} disabled={submitting || running}>{submitting ? <><LoaderCircle className="spin" size={16} /> Sending</> : <><Send size={15} /> Submit for evaluation</>}</button></div>
-            {error && <div className="form-error" role="alert"><TriangleAlert size={16} />{error}<button className="text-button" onClick={runPreview}>Retry preview</button></div>}
+            {error && (isSessionExpired(error) ? <SessionExpiredNotice /> : <div className="form-error" role="alert"><TriangleAlert size={16} />{error}<button className="text-button" onClick={runPreview}>Retry preview</button></div>)}
             {notice && <div className="success-note" role="status"><Check size={16} />{notice}<Link href="/results">View results <ArrowRight size={14} /></Link></div>}
             {preview && <section className="preview-section"><div className="preview-heading"><div><p className="eyebrow">PREVIEW RESULT</p><h3>Visible sample only</h3></div><span>{preview.rows.length} rows</span></div>{renderPreview(preview)}<p className="preview-caveat">A preview confirms the query can return rows. It is not a grading verdict.</p></section>}
             {submission && <section className="submission-section"><div className="preview-heading"><div><p className="eyebrow">SUBMISSION FEEDBACK</p><h3>{submission.task_score.earned} / {submission.task_score.possible} points</h3></div><span className="status-pill status-partially_demonstrated">{submission.task_id}</span></div><div className="feedback-list">{submission.public_test_feedback.map((item) => <div className="feedback-item" key={item.label}><span className={`feedback-mark${item.passed ? " passed" : " failed"}`}>{item.passed ? <Check size={13} /> : <TriangleAlert size={13} />}</span><div><b>{item.label}</b><p>{item.explanation}</p></div></div>)}</div></section>}

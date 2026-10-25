@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowLeft, ArrowRight, Check, CircleHelp, LoaderCircle, MessageSquareText, TriangleAlert } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { useAppState } from "@/components/AppStateProvider";
+import { SessionExpiredNotice, isSessionExpired } from "@/components/SessionExpiredNotice";
 import { answerInterview, getInterviewSummary, isMockMode, startInterview } from "@/lib/api";
 import type { InterviewQuestion, InterviewState } from "@/lib/types";
 
@@ -90,12 +91,12 @@ export default function InterviewPage() {
         <div className="project-backline"><Link className="back-link" href="/readiness"><ArrowLeft size={15} /> Evidence map</Link><span className="project-step">PRACTICE / 05</span></div>
         <div className="stage-header"><div><p className="stage-kicker">PRACTICE · MOCK INTERVIEW</p><h1>Practice the questions this role will ask.</h1><p className="intro-copy">Five questions for <strong>{analysis.target_role}</strong>: two about work on your resume, two about the posting&apos;s requirements, and one about a gap. Each answer gets rubric feedback.</p></div>{interview && <div className="evidence-counter"><strong>{answeredCount}<span> / {questions.length}</span></strong><small>answered</small></div>}</div>
 
-        {isMockMode && <div className="mock-banner"><CircleHelp size={16} /><span><b>Needs the API.</b> Interview practice runs on the GapMap API. Start it (use <code>GAPMAP_DEMO_MODE=1</code> for the offline demo) and run the web app with <code>NEXT_PUBLIC_GAPMAP_MOCK=false</code>.</span></div>}
+        {isMockMode && <div className="mock-banner"><CircleHelp size={16} /><span><b>Demo mode.</b> Questions and rubric scoring are based on the example role and your answers. Run the API with <code>NEXT_PUBLIC_GAPMAP_MOCK=false</code> for live AI generation.</span></div>}
         {interview?.mode === "demo" && <div className="mock-banner"><CircleHelp size={16} /><span><b>Demo interview.</b> Questions come from templates and scores come from simple text signals. No AI service ran.</span></div>}
 
-        {!interview && <section className="project-callout"><span className="callout-index">05 /<br />PRACTICE</span><div className="callout-content"><p className="eyebrow">ABOUT 10 MINUTES</p><h2>Answer as you would in a real interview.</h2><p>Questions quote the exact resume line or posting text they come from. Feedback is practice only: it never changes your evidence or project score.</p></div><button className="button button-primary" type="button" onClick={begin} disabled={busy !== null || isMockMode}>{busy === "start" ? <><LoaderCircle className="spin" size={16} /> Writing questions</> : <>Start interview <ArrowRight size={16} /></>}</button></section>}
+        {!interview && <section className="project-callout"><span className="callout-index">05 /<br />PRACTICE</span><div className="callout-content"><p className="eyebrow">ABOUT 10 MINUTES</p><h2>Answer as you would in a real interview.</h2><p>Questions quote the exact resume line or posting text they come from. Feedback is practice only: it never changes your evidence or project score.</p></div><button className="button button-primary" type="button" onClick={begin} disabled={busy !== null}>{busy === "start" ? <><LoaderCircle className="spin" size={16} /> Writing questions</> : <>Start interview <ArrowRight size={16} /></>}</button></section>}
 
-        {error && <div className="form-error" role="alert"><TriangleAlert size={16} />{error}</div>}
+        {error && (isSessionExpired(error) ? <SessionExpiredNotice /> : <div className="form-error" role="alert"><TriangleAlert size={16} />{error}</div>)}
 
         {interview && question && (
           <div className="workspace-grid">

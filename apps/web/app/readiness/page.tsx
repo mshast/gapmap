@@ -7,8 +7,9 @@ import Link from "next/link";
 import { AppShell } from "@/components/AppShell";
 import { StatusPill } from "@/components/StatusPill";
 import { useAppState } from "@/components/AppStateProvider";
-import { getProject, isMockMode } from "@/lib/api";
+import { getProject, getReadiness, isMockMode } from "@/lib/api";
 import { PlanCard } from "@/components/PlanCard";
+import { SessionExpiredNotice, isSessionExpired } from "@/components/SessionExpiredNotice";
 import { isEligibility, plansForRequirements } from "@/lib/projectPlans";
 
 export default function ReadinessPage() {
@@ -22,7 +23,18 @@ export default function ReadinessPage() {
   const requirements = readiness?.requirements ?? analysis?.requirements ?? [];
   const evidencedCount = requirements.filter((item) => item.evidence_status !== "unverified").length;
   const testedCount = requirements.filter((item) => item.evidence_status === "partially_demonstrated" || item.evidence_status === "demonstrated_on_project").length;
-  const assessable = requirements.some((item) => item.verification_capability === "available");
+  const plans = plansForRequirements(requirements);
+  const [filter, setFilter] = useState<"all" | "gaps" | "assessable" | "required">("all");
+  const unverifiedCount = requirements.filter((item) => item.evidence_status === "unverified").length;
+  const assessableCount = requirements.filter((item) => item.verification_capability === "available").length;
+  const requiredCount = requirements.filter((item) => item.requirement_type === "required").length;
+
+  const filteredRequirements = requirements.filter((item) => {
+    if (filter === "gaps") return item.evidence_status === "unverified";
+    if (filter === "assessable") return item.verification_capability === "available";
+    if (filter === "required") return item.requirement_type === "required";
+    return true;
+  });
 
   useEffect(() => {
     if (!hydrated || isMockMode || !analysis?.session_id) return;
@@ -33,12 +45,13 @@ export default function ReadinessPage() {
     return () => { active = false; };
   }, [analysis?.session_id, hydrated, setState]);
 
-  async function startProject() {
-    if (!analysis?.recommended_project_id) return;
+  async function startProject(projectId?: string) {
+    const targetId = projectId ?? analysis?.recommended_project_id;
+    if (!targetId) return;
     setError("");
     setLoadingProject(true);
     try {
-      const project = await getProject(projectId);
+      const project = await getProject(targetId);
       setState((current) => ({ ...current, project }));
       router.push(`/project/${project.id}`);
     } catch (caught) {
@@ -52,7 +65,10 @@ export default function ReadinessPage() {
   return (
     <AppShell>
       <section className="page-wrap readiness-page">
-        <div className="section-topline"><p className="eyebrow"><span className="eyebrow-line" /> YOUR EVIDENCE MAP / 02</p><span className="role-chip">{analysis.target_role}</span></div>
+        <div className="section-topline">
+          <p className="eyebrow"><span className="eyebrow-line" /> YOUR EVIDENCE MAP / 02</p>
+          <span className="role-chip">{analysis.target_role}</span>
+        </div>
         <div className="readiness-heading">
           <div>
             <h1>What the role asks.<br /><em>What you can show.</em></h1>
@@ -64,8 +80,30 @@ export default function ReadinessPage() {
           </div>
         </div>
 
+        {isSessionExpired(error) && <SessionExpiredNotice />}
+
+        <div className="filter-bar" role="tablist" aria-label="Filter requirements">
+          <button type="button" className={`filter-chip${filter === "all" ? " active" : ""}`} onClick={() => setFilter("all")}>
+            All ({requirements.length})
+          </button>
+          <button type="button" className={`filter-chip${filter === "gaps" ? " active" : ""}`} onClick={() => setFilter("gaps")}>
+            Gaps to build ({unverifiedCount})
+          </button>
+          <button type="button" className={`filter-chip${filter === "assessable" ? " active" : ""}`} onClick={() => setFilter("assessable")}>
+            Covered by assessment ({assessableCount})
+          </button>
+          <button type="button" className={`filter-chip${filter === "required" ? " active" : ""}`} onClick={() => setFilter("required")}>
+            Required only ({requiredCount})
+          </button>
+        </div>
+
         <div className="requirement-list" aria-label="Job requirements">
-          {requirements.map((requirement, index) => (
+          {filteredRequirements.length === 0 && (
+            <div className="empty-result" style={{ padding: "24px 0", textAlign: "center" }}>
+              No requirements match this filter.
+            </div>
+          )}
+          {filteredRequirements.map((requirement, index) => (
             <article className="requirement-row" key={requirement.id}>
               <span className="requirement-index">0{index + 1}</span>
               <div className="requirement-main">
@@ -77,24 +115,90 @@ export default function ReadinessPage() {
                 {(requirement.resume_quotes ?? []).length > 0 ? (
                   <div className="evidence-quote"><BadgeCheck size={15} /><span><b>Resume claim</b> “{requirement.resume_quotes?.[0]}”</span></div>
                 ) : (
-                  <div className="evidence-absent"><CircleHelp size={15} /><span>No supporting resume quote found. That does not mean you lack the skill.</span></div>
+                  <div className="evidence-absent"><CircleHelp size={15} /><span>{isEligibility(requirement) ? "Not stated on your resume. Add it if it applies to you." : "No resume evidence found. That is a gap to investigate, not a verdict."}</span></div>
                 )}
               </div>
               <div className="requirement-status">
                 <StatusPill status={requirement.evidence_status} />
-                {requirement.verification_capability === "not_assessable" && <span className="not-covered"><LockKeyhole size={13} /> No verification project available</span>}
-                {requirement.verification_capability === "available" && <span className="can-test">Project can test this</span>}
+                {isEligibility(requirement) ? (
+                  <span className="not-covered">Eligibility, not a skill</span>
+                ) : requirement.verification_capability === "not_assessable" ? (
+                  <span className="not-covered"><LockKeyhole size={13} /> No verification project available</span>
+                ) : (
+                  <span className="can-test">Project can test this</span>
+                )}
               </div>
             </article>
           ))}
         </div>
 
-  return <AppShell><section className="page-wrap readiness-page">
-    <div className="stage-header"><div><p className="stage-kicker">STEP 2 OF 3 · EVIDENCE MAP</p><h1>What this role asks — and what you can prove.</h1><p className="intro-copy">We found {requirements.length} requirements for <strong>{analysis.target_role}</strong>. Resume evidence is self-reported; project evidence is tested.</p></div><div className="evidence-counter"><strong>{evidencedCount}<span> / {requirements.length}</span></strong><small>with evidence so far</small></div></div>
-    <div className="step-bar" aria-label="GapMap steps"><span className="done">1 Analyze</span><span className="current">2 Assess gaps</span><span>3 Choose next steps</span></div>
-    <div className="requirement-list" aria-label="Job requirements">{requirements.map((requirement) => <article className="requirement-row" key={requirement.id}><div className="requirement-main"><div className="requirement-title-line"><h2>{requirement.label}</h2><span className={`importance importance-${requirement.requirement_type}`}>{requirement.requirement_type}</span></div><blockquote>{requirement.job_quote}</blockquote>{(requirement.resume_quotes ?? []).length > 0 ? <div className="evidence-quote"><BadgeCheck size={15} /><span><b>Resume claim</b> “{requirement.resume_quotes?.[0]}”</span></div> : <div className="evidence-absent"><CircleHelp size={15} /><span>{isEligibility(requirement) ? "Not stated on your resume. Add it if it applies to you." : "No resume evidence found. That is a gap to investigate, not a verdict."}</span></div>}</div><div className="requirement-status"><StatusPill status={requirement.evidence_status} />{isEligibility(requirement) ? <span className="not-covered">Eligibility, not a skill</span> : requirement.verification_capability === "not_assessable" ? <span className="not-covered"><LockKeyhole size={13} /> No matching test yet</span> : <span className="can-test">Covered by the SQL assessment</span>}</div></article>)}</div>
-    <section className="recommendation-section" aria-labelledby="assessment-title"><div className="section-heading"><div><p className="stage-kicker">PROJECT PLANS</p><h2 id="assessment-title">Projects matched to your specific gaps.</h2></div><span className="section-note">Start with the highest-priority gap</span></div>{plans.length === 0 && <div className="empty-result">No skill gaps to build a project for. Every requirement already has evidence or is an eligibility condition.</div>}<div className="plan-grid">{plans.slice(0, 4).map((plan) => <PlanCard key={plan.id} plan={plan} action={plan.runnable_project_id && <button className="button button-primary" type="button" onClick={() => openProject(plan.runnable_project_id!)} disabled={loadingProject}>{loadingProject ? <LoaderCircle className="spin" size={16} /> : <>Start graded assessment <ArrowRight size={16} /></>}</button>} />)}</div>{plans.length > 4 && <p className="field-meta">Showing the 4 highest-priority plans of {plans.length}. The full list is on the results page.</p>}</section>
-    <section className="project-callout"><span className="callout-index">05 /<br />PRACTICE</span><div className="callout-content"><p className="eyebrow">MOCK INTERVIEW</p><h2>Practice talking about this role.</h2><p>Five questions from your resume and this posting, with rubric feedback on each answer.</p></div><Link className="button button-outline" href="/interview">Practice interview <ArrowRight size={16} /></Link></section>
-    {error && <div className="form-error" role="alert">{error}</div>}{isMockMode ? <p className="fixture-note">Demo mode uses the labeled example role. Live mode generates this map from your posting.</p> : analysis.analysis_mode === "demo" && <p className="fixture-note">Demo analysis: the API used a fixed extraction for the bundled posting. No AI service ran.</p>}
-  </section></AppShell>;
+        <section className="recommendation-section" aria-labelledby="assessment-title">
+          <div className="section-heading">
+            <div>
+              <p className="stage-kicker">PROJECT PLANS</p>
+              <h2 id="assessment-title">Projects matched to your specific gaps.</h2>
+            </div>
+            <span className="section-note">Start with the highest-priority gap</span>
+          </div>
+          {plans.length === 0 && (
+            <div className="empty-result">
+              No skill gaps to build a project for. Every requirement already has evidence or is an eligibility condition.
+            </div>
+          )}
+          <div className="plan-grid">
+            {plans.slice(0, 4).map((plan) => (
+              <PlanCard
+                key={plan.id}
+                plan={plan}
+                action={
+                  plan.runnable_project_id && (
+                    <button
+                      className="button button-primary"
+                      type="button"
+                      onClick={() => startProject(plan.runnable_project_id!)}
+                      disabled={loadingProject}
+                    >
+                      {loadingProject ? (
+                        <LoaderCircle className="spin" size={16} />
+                      ) : (
+                        <>
+                          Start graded assessment <ArrowRight size={16} />
+                        </>
+                      )}
+                    </button>
+                  )
+                }
+              />
+            ))}
+          </div>
+          {plans.length > 4 && (
+            <p className="field-meta">
+              Showing the 4 highest-priority plans of {plans.length}. The full list is on the results page.
+            </p>
+          )}
+        </section>
+
+        <section className="project-callout">
+          <span className="callout-index">05 /<br />PRACTICE</span>
+          <div className="callout-content">
+            <p className="eyebrow">MOCK INTERVIEW</p>
+            <h2>Practice talking about this role.</h2>
+            <p>Five questions from your resume and this posting, with rubric feedback on each answer.</p>
+          </div>
+          <Link className="button button-outline" href="/interview">
+            Practice interview <ArrowRight size={16} />
+          </Link>
+        </section>
+
+        {error && !isSessionExpired(error) && <div className="form-error" role="alert">{error}</div>}
+        {isMockMode ? (
+          <p className="fixture-note">Demo mode uses the labeled example role. Live mode generates this map from your posting.</p>
+        ) : (
+          analysis.analysis_mode === "demo" && (
+            <p className="fixture-note">Demo analysis: the API used a fixed extraction for the bundled posting. No AI service ran.</p>
+          )
+        )}
+      </section>
+    </AppShell>
+  );
 }

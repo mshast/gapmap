@@ -17,6 +17,7 @@ export default function HomePage() {
   const [error, setError] = useState("");
   const [fileLabel, setFileLabel] = useState("");
   const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   async function loadDemo() {
     setError("");
@@ -58,6 +59,25 @@ export default function HomePage() {
     }
   }
 
+  function onDragOver(event: React.DragEvent) {
+    event.preventDefault();
+    setIsDragging(true);
+  }
+
+  function onDragLeave(event: React.DragEvent) {
+    event.preventDefault();
+    setIsDragging(false);
+  }
+
+  function onDrop(event: React.DragEvent) {
+    event.preventDefault();
+    setIsDragging(false);
+    const file = event.dataTransfer.files?.[0];
+    if (file) {
+      onFileSelected(file);
+    }
+  }
+
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
@@ -95,7 +115,7 @@ export default function HomePage() {
         {isMockMode && <div className="mock-banner"><CircleHelp size={16} /><span><b>Demo mode.</b> Only the example posting can be analyzed here. Use <b>Load demo example</b>, or run the API and start the web app with <code>NEXT_PUBLIC_GAPMAP_MOCK=false</code> to analyze your own posting.</span></div>}
 
         <form className="input-grid" onSubmit={onSubmit}>
-          <section className="input-panel resume-panel" aria-labelledby="resume-heading">
+          <section className={`input-panel resume-panel${isDragging ? " drag-over" : ""}`} aria-labelledby="resume-heading" onDragOver={onDragOver} onDragLeave={onDragLeave} onDrop={onDrop}>
             <div className="panel-heading">
               <div className="panel-number">A</div>
               <div>
@@ -111,7 +131,7 @@ export default function HomePage() {
                 <Upload size={15} /> Choose PDF
               </button>
               {fileLabel && <span className="file-confirm"><Check size={14} /> {fileLabel}</span>}
-              <span className="field-meta">PDF · max 5 MB</span>
+              <span className="field-meta">Drop PDF or choose file · max 5 MB</span>
             </div>
             <label className="visually-hidden" htmlFor="resume-text">Resume text</label>
             <textarea

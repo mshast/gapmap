@@ -2,8 +2,6 @@
 
 A screen-recording script for the live web app backed by the real API. The timings follow the outline in `specs/04_INTEGRATION_AND_DELIVERY_SPEC.md`. Each scene lists what to do on screen and a suggested voiceover.
 
-This script requires the SQL project service in the live API (PR #7, `wire-part3-service`). Without it, the Project page cannot run or grade SQL.
-
 ## Before recording
 
 1. Start the API in deterministic demo mode from the repository root:
@@ -23,6 +21,8 @@ This script requires the SQL project service in the live API (PR #7, `wire-part3
    # Windows (PowerShell)
    $env:NEXT_PUBLIC_GAPMAP_MOCK="false"; npm run dev --prefix apps/web
    ```
+
+   To record against the real AI instead, start the API with the Groq settings in `.env` (see `.env.example`): `.venv/bin/python -m uvicorn gapmap.apps.api.main:app --port 8000 --env-file .env`. Groq's free tier allows about three analyses a minute. Re-analyzing the same resume and posting reuses the first result, so retakes are instant and cost nothing.
 
 3. Open <http://localhost:3000> in a fresh incognito window. The app saves its session in `localStorage`, and the API keeps sessions only in memory, so restart the API and use a new window before every take. The top-right chip must read **API connected**, not "Demo fixtures".
 4. Zoom the browser to about 110–125% so text is readable in the video.
@@ -73,9 +73,9 @@ The wrong T3 query is the editor's starter code (the "current dashboard query"),
 
 **Screen:** click **Load demo example**. Scroll through both boxes.
 
-**Say:** "Here's a CS student, Maya, applying for a software engineering internship. Her resume shows a Python project and teamwork, but it never mentions SQL, and the posting says SQL is required. For a repeatable recording we're running the API in demo mode, which uses a fixed extraction for this posting. In live mode, OpenAI structured outputs extract the requirements, and the server verifies every quote."
+**Say:** "Here's a CS student, Maya, applying for a software engineering internship. Her resume shows a Python project and teamwork, but it never mentions SQL, and the posting says SQL is required. For a repeatable recording we're running the API in demo mode, which uses a fixed extraction for this posting. In live mode, an LLM extracts the requirements with structured outputs, and the server verifies every quote."
 
-The UI does not show when demo mode is on, so say it out loud to avoid implying an AI call that didn't happen.
+In demo mode the Readiness page shows a **Demo fixture** banner, so the video never implies an AI call that didn't happen. Leave it visible.
 
 **Screen:** click **Analyze evidence**.
 
@@ -87,7 +87,7 @@ The UI does not show when demo mode is on, so say it out loud to avoid implying 
 
 ## 1:05–1:35 — Personalized project
 
-**Screen:** scroll down and click **Start project**. Show the scenario and schema briefly. Paste T1 and click **Submit for evaluation** (35/35). Paste T2 and submit (25/25).
+**Screen:** scroll to **Project plans** and click **Start graded assessment** on the SQL card. Show the scenario and schema briefly. Paste T1 and click **Submit for evaluation** (35/35). Paste T2 and submit (25/25).
 
 **Say:** "Because SQL is the required gap we can test, GapMap recommends a short work sample: debug an e-commerce revenue report. These queries run on the server in a locked-down, read-only SQLite sandbox and are graded against hidden test data. The first two tasks join orders to regions and compute gross revenue."
 
@@ -105,7 +105,7 @@ The T3 sidebar shows a checkmark after the failing submission too. It means "sub
 
 ## 2:10–2:35 — Changed evidence and roadmap
 
-**Screen:** click **View results**. Show the points plate (**100 / 100**) and **What this sample covered** (all four competencies demonstrated on project). Scroll to **Requirement evidence trail**, then **Keep building evidence**.
+**Screen:** click **View results**. Show the **Project score** plate (**100 / 100**) and **What changed** (all four competencies demonstrated on project). Scroll to **Requirement evidence trail**, then **Keep building evidence**.
 
 **Say:** "SQL moves from 'not yet verified' to 'demonstrated on project', backed by graded results rather than a claim. React and Docker don't change, because a SQL project can't prove them. The roadmap moves on to the next gaps. This covers one narrow work sample. It is not a hiring prediction."
 
@@ -119,10 +119,15 @@ If time allows, click **Full evidence map** to show the same SQL requirement now
 
 Make only claims the build supports. Do not cite user impact numbers or accuracy rates, and do not suggest that GapMap predicts employability or placement odds.
 
-## Known issues on the current build
+## Optional scenes for a longer cut
 
-These came up during a full live click-through and are worth fixing before the final take:
+Each takes about 20 seconds. They don't fit the three-minute cut above without trimming another scene.
 
-- **Task sidebar checkmarks mean "submitted"**, so a failing T3 submission is also checked.
-- **The UI never shows `analysis_mode` or the analysis `warnings`**, so a demo-mode run looks the same as a live AI run.
-- **Resume quotes show the resume's leading `- ` bullet** (for example, `“- Built a Python service…”`). This is cosmetic.
+- **Mock interview.** From Readiness, click **Practice interview**, then **Start interview**. Answer the first question (it quotes a line from Maya's resume) and show the rubric scores and the suggested rewrite. A follow-up question appears when the answer has no concrete outcome. In demo mode the scores come from simple text signals, and the page says so.
+- **Python practice.** On the Python plan card, click **Try the self-checked exercise**. Run the starter code to show the failing checks. Say plainly that the code runs in the browser and is self-checked, so it never changes the evidence map.
+- **A non-SQL posting (live mode only).** Paste a mobile or embedded posting. Every requirement still gets a plan, skills GapMap can't grade get AI-suggested project ideas labeled as such, and degree or work-authorization lines show as **Eligibility, not a skill**.
+
+## Before the final take
+
+- Restart the API and use a new incognito window for every take. Sessions live only in the API's memory, so a restart (including `--reload` after a code change) forgets them, and the next project submit or interview fails with "Session not found." Start again from the Input page if that happens.
+- In live mode, wait about 20 seconds between back-to-back analyses on Groq's free tier, or reuse the same posting, which returns the cached result instantly.

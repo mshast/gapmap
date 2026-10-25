@@ -30,7 +30,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           {links.map((link, index) => {
             const active = link.href === "/" ? pathname === "/" : pathname.startsWith(link.href.split("/").slice(0, 2).join("/"));
             return (
-              <Link key={link.href} className={`nav-link${active ? " active" : ""}`} href={link.href}>
+              <Link
+                key={link.href}
+                className={`nav-link${active ? " active" : ""}${link.href !== "/" && !state.analysis ? " nav-pending" : ""}`}
+                href={link.href}
+                title={link.href !== "/" && !state.analysis ? "Analyze a role first to view this stage" : undefined}
+              >
                 <span className="nav-index">0{index + 1}</span>{link.label}
               </Link>
             );

@@ -30,20 +30,45 @@ def answer(client, interview_id: str, question_id: str, text: str):
 
 
 @pytest.mark.asyncio
-async def test_quota_response_is_not_retried_and_recommends_demo_mode():
+async def test_credit_exhaustion_is_not_retried_and_recommends_demo_mode():
     calls = 0
 
     def handler(request):
         nonlocal calls
         calls += 1
-        return httpx.Response(429, headers={"Retry-After": "12"}, json={"error": "quota"})
+        return httpx.Response(402, json={"error": "quota"})
 
     client = InterviewLLMClient("test-only-key", transport=httpx.MockTransport(handler))
     with pytest.raises(InterviewRateLimited) as caught:
         await client.evaluate(QUESTION, "I would join the tables.", allow_follow_up=True)
 
     assert calls == 1
-    assert caught.value.retry_after == 12
+    assert caught.value.retry_after is None
+    assert "demo mode" in caught.value.public_message
+
+
+@pytest.mark.asyncio
+async def test_short_rate_limit_is_retried_then_recommends_demo_mode():
+    calls = 0
+    sleeps: list[float] = []
+
+    def handler(request):
+        nonlocal calls
+        calls += 1
+        return httpx.Response(429, headers={"Retry-After": "10"}, json={"error": "quota"})
+
+    async def sleep(seconds: float) -> None:
+        sleeps.append(seconds)
+
+    client = InterviewLLMClient(
+        "test-only-key", transport=httpx.MockTransport(handler), sleep=sleep,
+    )
+    with pytest.raises(InterviewRateLimited) as caught:
+        await client.evaluate(QUESTION, "I would join the tables.", allow_follow_up=True)
+
+    assert calls == 2
+    assert sleeps == [10.5]
+    assert caught.value.retry_after == 10
     assert "demo mode" in caught.value.public_message
 
 
@@ -68,7 +93,7 @@ def test_quota_on_start_falls_back_to_demo(make_api, analyzed):
     def handler(request):
         nonlocal calls
         calls += 1
-        return httpx.Response(429, headers={"Retry-After": "9"}, json={"error": "quota"})
+        return httpx.Response(429, headers={"Retry-After": "30"}, json={"error": "quota"})
 
     client, _ = make_api(
         InterviewLLMClient("test-only-key", transport=httpx.MockTransport(handler)),

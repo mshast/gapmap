@@ -1,7 +1,10 @@
 """Bounded structured extraction. Documents are data and never drive tool calls."""
 
+import asyncio
 import json
-from typing import Protocol
+import os
+from collections.abc import Awaitable, Callable
+from typing import Literal, Protocol
 from uuid import uuid4
 
 import httpx
@@ -10,8 +13,76 @@ from pydantic import ValidationError
 from gapmap.apps.api.services.analysis.schema import ExtractionResult
 
 
+ExtractionFailure = Literal["invalid", "rate_limited", "refused", "auth"]
+# Longest total wait for provider rate limits before giving up on a request.
+MAX_RATE_LIMIT_WAIT = 20.0
+
+
 class ExtractionError(Exception):
     """An unusable provider result, without provider bodies or personal data."""
+
+    def __init__(
+        self, message: str, *, reason: ExtractionFailure = "invalid", retry_after: float | None = None,
+    ) -> None:
+        super().__init__(message)
+        self.reason = reason
+        self.retry_after = retry_after
+
+
+def retry_after_seconds(response: httpx.Response) -> float | None:
+    try:
+        return max(0.0, float(response.headers["retry-after"]))
+    except (KeyError, ValueError):
+        return None
+
+
+async def post_with_retries(
+    client: httpx.AsyncClient, url: str, *, headers: dict[str, str], json: dict[str, object],
+    sleep: Callable[[float], Awaitable[None]] = asyncio.sleep, max_wait: float = MAX_RATE_LIMIT_WAIT,
+) -> httpx.Response:
+    """POST, waiting out short rate limits (429 with Retry-After) and one transient 5xx.
+
+    Free provider tiers allow only a few requests per minute, so a short wait
+    turns most rate-limit failures into a slower success.
+    """
+    waited = 0.0
+    retried_server_error = False
+    while True:
+        response = await client.post(url, headers=headers, json=json)
+        if response.status_code == 429:
+            delay = retry_after_seconds(response)
+            if delay is not None and waited + delay <= max_wait:
+                await sleep(delay + 0.5)
+                waited += delay + 0.5
+                continue
+        elif response.status_code >= 500 and not retried_server_error:
+            retried_server_error = True
+            await sleep(1.0)
+            continue
+        return response
+
+
+def groq_reasoning_effort(model: str) -> str | None:
+    """Groq's gpt-oss models default to medium reasoning, which roughly doubles the
+    tokens an extraction uses. Low keeps more requests inside free-tier limits."""
+    if not model.startswith("openai/gpt-oss"):
+        return None
+    return os.environ.get("GROQ_REASONING_EFFORT", "low").strip().lower() or None
+
+
+def schema_rejection(response: httpx.Response) -> str | None:
+    """'refused' or 'invalid' when the provider rejected the model's own JSON (Groq 400)."""
+    if response.status_code != 400:
+        return None
+    try:
+        error = response.json().get("error", {})
+    except ValueError:
+        return None
+    if not isinstance(error, dict) or error.get("code") != "json_validate_failed":
+        return None
+    generation = error.get("failed_generation")
+    # Prose instead of JSON is the model declining, e.g. a posting with too few requirements.
+    return "invalid" if isinstance(generation, str) and generation.lstrip().startswith("{") else "refused"
 
 
 class Extractor(Protocol):
@@ -28,7 +99,9 @@ Return every distinct material requirement actually stated in job_text, in posti
 order, up to 12. Do not stop at five when the posting states more. Do not split one
 requirement into filler or invent requirements to reach the minimum; if fewer than
 five are present, refuse.
-Copy a short exact job_quote (at most 400 characters) for each requirement.
+Copy a short exact job_quote (at most 400 characters) for each requirement. Every
+requirement must quote a different line; skills named together on one line are one
+requirement with all of their skill IDs (for example, React and TypeScript).
 Use required/preferred from the posting; do not turn a preference into a must-have.
 Importance is 3 for essential requirements, 2 for useful preferences, 1 for minor
 preferences. Copy the job title as target_role if present.
@@ -69,11 +142,15 @@ class StructuredLLMClient:
         self, api_key: str, model: str = "gpt-4o-mini", *,
         base_url: str = "https://api.openai.com/v1/chat/completions",
         transport: httpx.AsyncBaseTransport | None = None,
+        sleep: Callable[[float], Awaitable[None]] = asyncio.sleep,
+        reasoning_effort: str | None = None,
     ) -> None:
         self._api_key = api_key
         self._model = model
         self._base_url = base_url
         self._transport = transport
+        self._sleep = sleep
+        self._reasoning_effort = reasoning_effort
 
     async def extract(self, resume_text: str, job_text: str) -> ExtractionResult:
         if not self._api_key.strip():
@@ -101,25 +178,44 @@ class StructuredLLMClient:
             "max_completion_tokens": 6_000,
             "store": False,
         }
+        if self._reasoning_effort:
+            payload["reasoning_effort"] = self._reasoning_effort
         try:
             # The endpoint is fixed server-side; document URLs cannot change it.
             async with httpx.AsyncClient(
                 timeout=httpx.Timeout(45.0, connect=10.0),
                 transport=self._transport, follow_redirects=False,
             ) as client:
-                response = await client.post(
-                    self._base_url,
-                    headers={"Authorization": f"Bearer {self._api_key}"}, json=payload,
+                # Sampling again once is cheap when the model's JSON broke the schema.
+                for attempt in range(2):
+                    response = await post_with_retries(
+                        client, self._base_url,
+                        headers={"Authorization": f"Bearer {self._api_key}"}, json=payload,
+                        sleep=self._sleep,
+                    )
+                    rejection = schema_rejection(response)
+                    if rejection != "invalid" or attempt == 1:
+                        break
+            if response.status_code == 429:
+                raise ExtractionError(
+                    "The provider rate limit was reached.", reason="rate_limited",
+                    retry_after=retry_after_seconds(response),
                 )
-                response.raise_for_status()
+            if response.status_code in {401, 403}:
+                raise ExtractionError("The provider rejected the API key.", reason="auth")
+            if rejection == "refused":
+                raise ExtractionError("The model declined to extract requirements.", reason="refused")
+            response.raise_for_status()
             if len(response.content) > 128_000:
                 raise ExtractionError("The extraction response exceeded the size limit.")
             choice = response.json()["choices"][0]
             message = choice["message"]
             if not isinstance(message, dict):
                 raise ExtractionError("The extraction response did not contain a valid message.")
-            if choice.get("finish_reason") != "stop" or message.get("refusal"):
-                raise ExtractionError("The extraction was refused or incomplete.")
+            if message.get("refusal"):
+                raise ExtractionError("The model declined to extract requirements.", reason="refused")
+            if choice.get("finish_reason") != "stop":
+                raise ExtractionError("The extraction was incomplete.")
             content = message["content"]
             if not isinstance(content, str):
                 raise ExtractionError("The extraction response did not contain JSON text.")

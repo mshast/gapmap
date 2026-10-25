@@ -1,5 +1,6 @@
 """Ground excerpts and conservatively interpret self-reported resume claims."""
 
+import html
 import re
 
 from gapmap.apps.api.contracts import EvidenceStatus, ResumeEvidence
@@ -7,6 +8,25 @@ from gapmap.apps.api.contracts import EvidenceStatus, ResumeEvidence
 
 def normalize_whitespace(value: str) -> str:
     return " ".join(value.split())
+
+
+_MARKUP = re.compile(r"</?[a-z][a-z0-9]*(?:\s[^<>]*)?/?>|&(?:[a-z]+|#\d+|#x[0-9a-f]+);", re.I)
+
+
+def clean_pasted_text(text: str) -> str:
+    """Turn HTML pasted from a careers page into plain text.
+
+    Models decode entities like &amp; when they quote, so excerpts only
+    ground against a document that is already plain text.
+    """
+    if not _MARKUP.search(text):
+        return text
+    text = re.sub(r"<li\b[^>]*>", "\n- ", text, flags=re.I)
+    text = re.sub(r"<br\s*/?>|</(?:p|div|li|h[1-6]|tr|ul|ol)>", "\n", text, flags=re.I)
+    text = re.sub(r"<[^<>]+>", "", text)
+    text = html.unescape(text).replace("\xa0", " ")
+    lines = [" ".join(line.split()) for line in text.split("\n")]
+    return re.sub(r"\n{3,}", "\n\n", "\n".join(lines)).strip()
 
 
 def verified_excerpt(quote: str, document: str) -> str | None:
@@ -23,7 +43,7 @@ def skills_in_text(text: str) -> list[str]:
     """A deliberately small, inspectable taxonomy, grounded in the cited text."""
     sql_context = bool(re.search(
         r"\b(?:sql|postgres(?:ql)?|mysql|sqlite|databases?|relational|queries|querying|"
-        r"tables?|revenue|where\s+clauses?|group\s+by)\b", text, re.I
+        r"tables?|revenue|reconcil\w*|where\s+clauses?|group\s+by)\b", text, re.I
     ))
     patterns = {
         "sql_joins": r"\bjoins?\b",
@@ -66,7 +86,7 @@ _ELIGIBILITY = re.compile(
     r"graduat(?:e|es|ing|ion)|class\s+of|enrolled|pursuing|gpa|"
     r"work\s+authori[sz]ation|authori[sz]ed\s+to\s+work|sponsorship|visa|citizen(?:ship)?|"
     r"security\s+clearance|relocat\w*|on[- ]?site|in[- ]office|hybrid|"
-    r"available\s+(?:to\s+start|for))\b"
+    r"available\s+(?:to\s+start|to\s+work|for)|\d+\s+hours\s+(?:per|a|each)\s+week)\b"
     r"|(?<!\w)(?:b\.?s|b\.?a)(?:\.|(?!\w))", re.I
 )
 
@@ -82,6 +102,11 @@ def requirement_skills(job_quote: str) -> list[str]:
     if found:
         return found
     return ["eligibility"] if is_eligibility(job_quote) else ["other"]
+
+
+def strip_list_marker(quote: str) -> str:
+    """Drop a leading bullet or list number; the rest is still a verbatim substring."""
+    return re.sub(r"^\s*(?:[-*•·–]|\d{1,2}[.)])\s+", "", quote) or quote
 
 
 def clean_label(label: str) -> str:
@@ -125,6 +150,8 @@ def match_resume_evidence(
     seen = set()
     for proposed in proposed_quotes:
         quote = verified_excerpt(proposed, resume_text)
+        if quote is not None:
+            quote = strip_list_marker(quote)
         if quote is None or quote in seen:
             continue
         seen.add(quote)

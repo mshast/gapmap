@@ -1,14 +1,19 @@
 """Structured interview generation and feedback, with an explicitly labeled demo client."""
 
+import asyncio
 import logging
 import os
 import re
+from collections.abc import Awaitable, Callable
 from typing import Protocol, TypeVar
 
 import httpx
 from pydantic import BaseModel, ValidationError
 
 from gapmap.apps.api.contracts import EvidenceStatus, Requirement
+from gapmap.apps.api.services.analysis.llm_client import (
+    groq_reasoning_effort, post_with_retries, schema_rejection,
+)
 from gapmap.apps.api.services.interfaces import PublicServiceError
 from gapmap.apps.api.services.interview.prompts import (
     GAP_PROBE_OPENING,
@@ -77,12 +82,16 @@ class InterviewLLMClient:
         base_url: str = "https://api.openai.com/v1/chat/completions",
         key_name: str = "OPENAI_API_KEY",
         transport: httpx.AsyncBaseTransport | None = None,
+        sleep: Callable[[float], Awaitable[None]] = asyncio.sleep,
+        reasoning_effort: str | None = None,
     ) -> None:
         self._api_key = api_key
         self._model = model
         self._base_url = base_url
         self._key_name = key_name
         self._transport = transport
+        self._sleep = sleep
+        self._reasoning_effort = reasoning_effort
 
     async def generate_questions(self, requirements: list[Requirement]) -> list[QuestionDraft]:
         result = await self._complete(
@@ -118,6 +127,8 @@ class InterviewLLMClient:
             "max_completion_tokens": max_tokens,
             "store": False,
         }
+        if self._reasoning_effort:
+            payload["reasoning_effort"] = self._reasoning_effort
         for attempt in range(1, MAX_ATTEMPTS + 1):
             try:
                 return await self._attempt(payload, result_model)
@@ -137,12 +148,15 @@ class InterviewLLMClient:
             timeout=httpx.Timeout(45.0, connect=10.0),
             transport=self._transport, follow_redirects=False,
         ) as client:
-            response = await client.post(
-                self._base_url,
-                headers={"Authorization": f"Bearer {self._api_key}"}, json=payload,
+            response = await post_with_retries(
+                client, self._base_url,
+                headers={"Authorization": f"Bearer {self._api_key}"}, json=payload, sleep=self._sleep,
             )
             if response.status_code in {402, 429}:
                 raise InterviewRateLimited(_retry_after(response))
+            if schema_rejection(response):
+                # The provider rejected the model's JSON against the schema; sample again.
+                raise _InvalidOutput
             response.raise_for_status()
         try:
             if len(response.content) > 128_000:
@@ -332,6 +346,7 @@ def client_from_env() -> InterviewClient:
             model,
             base_url="https://api.groq.com/openai/v1/chat/completions",
             key_name="GROQ_API_KEY",
+            reasoning_effort=groq_reasoning_effort(model),
         )
     if provider == "openai":
         model = os.environ.get("OPENAI_MODEL", "gpt-4o-mini").strip() or "gpt-4o-mini"

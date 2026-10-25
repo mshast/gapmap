@@ -102,7 +102,7 @@ h3 { font-size: 15px; line-height: 1.35; }
 .counter-value span { color: #9ba79f; font-size: 21px; }
 .counter-label { margin-top: 8px; color: var(--muted); font-size: 11px; }
 .requirement-list { border-top: 1px solid var(--line-dark); }
-.requirement-row { display: grid; grid-template-columns: minmax(0, 1fr) 210px; gap: 24px; padding: 19px 0; border-bottom: 1px solid var(--line); }
+.requirement-row { display: grid; grid-template-columns: 24px minmax(0, 1fr) 210px; gap: 24px; padding: 19px 0; border-bottom: 1px solid var(--line); }
 .requirement-index { padding-top: 2px; color: #9ba89f; font: 11px var(--mono); }
 .requirement-title-line { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .requirement-title-line h2 { margin: 0; font-size: 19px; }
@@ -300,7 +300,7 @@ h3 { font-size: 15px; line-height: 1.35; }
 .milestone-evidence { margin: 12px 0 0; display: flex; align-items: flex-start; gap: 7px; color: var(--forest); font-size: 11px; }
 .milestone-evidence svg { flex: none; margin-top: 2px; }
 .competency-feedback { margin-top: 12px; border-top: 1px solid var(--line); }
-.competency-feedback-row { padding: 7px 0; display: flex; align-items: center; justify-content: space-between; gap: 10px; color: var(--muted); border-bottom: 1px solid #eef2f3; font-size: 11px; text-transform: capitalize; }
+.competency-feedback-row { padding: 7px 0; display: flex; align-items: center; justify-content: space-between; gap: 10px; color: var(--muted); border-bottom: 1px solid #eef2f3; font-size: 11px; }
 .competency-feedback-row .status-pill { text-transform: none; }
 
 @media (max-width: 800px) {
@@ -309,7 +309,7 @@ h3 { font-size: 15px; line-height: 1.35; }
   .nav-link { padding: 0 8px; }
   .nav-index { display: none; }
   .page-wrap, .footer-note { width: min(100% - 32px, 700px); }
-  .requirement-row { grid-template-columns: minmax(0, 1fr) 180px; }
+  .requirement-row { grid-template-columns: 22px minmax(0, 1fr) 180px; gap: 16px; }
   .requirement-status { flex-direction: row; flex-wrap: wrap; align-items: center; }
   .workspace-grid { grid-template-columns: 1fr; }
   .task-rail { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; }
@@ -349,7 +349,8 @@ h3 { font-size: 15px; line-height: 1.35; }
   .counter-value { font-size: 31px; }
   .counter-label { margin: 0; }
   .role-chip { font-size: 10px; }
-  .requirement-row { grid-template-columns: 1fr; gap: 12px; padding: 15px 0; }
+  .requirement-row { grid-template-columns: 20px minmax(0, 1fr); gap: 6px 10px; padding: 15px 0; }
+  .requirement-status { grid-column: 2; }
   .requirement-title-line h2 { font-size: 17px; }
   .requirement-main blockquote { font-size: 12px; }
   .project-callout { grid-template-columns: 45px 1fr; padding: 16px 13px; gap: 10px; }

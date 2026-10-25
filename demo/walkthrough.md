@@ -1,34 +1,124 @@
-# GapMap Three-Minute Demo Script
+# GapMap demo recording script
 
-A screen-recording script for the live web app backed by the real API. The timings follow the outline in `specs/04_INTEGRATION_AND_DELIVERY_SPEC.md`. Each scene lists what to do on screen and a suggested voiceover.
+Screen recording with live voiceover, **3:00**, using the **bundled demo example only**. Nothing in this path calls an AI provider, so it survives an exhausted or rate-limited key. The provider-free run is labeled on screen as a demo fixture.
 
-## Before recording
+The story is not "we built an AI tool". It is: **a posting becomes an evidence map, the gaps become a concrete build plan, one plan gets graded, and the evidence changes only where it was measured.**
 
-1. Start the API in deterministic demo mode from the repository root:
+## Setup
 
-   ```bash
-   # macOS / Linux
-   GAPMAP_DEMO_MODE=1 .venv/bin/python -m uvicorn gapmap.apps.api.main:app --port 8000
-   # Windows (PowerShell)
-   $env:GAPMAP_DEMO_MODE="1"; .venv\Scripts\python -m uvicorn gapmap.apps.api.main:app --port 8000
-   ```
+Two terminals, from the repository root.
 
-2. Start the web app against the API (not the mock fixtures):
+```bash
+# 1. API: deterministic demo mode — no provider calls at all
+GAPMAP_DEMO_MODE=1 .venv/bin/python -m uvicorn gapmap.apps.api.main:app --port 8000
 
-   ```bash
-   # macOS / Linux
-   NEXT_PUBLIC_GAPMAP_MOCK=false npm run dev --prefix apps/web
-   # Windows (PowerShell)
-   $env:NEXT_PUBLIC_GAPMAP_MOCK="false"; npm run dev --prefix apps/web
-   ```
+# 2. Web app: talk to the API, not the browser fixtures
+NEXT_PUBLIC_GAPMAP_MOCK=false npm run dev --prefix apps/web
+```
 
-   To record against the real AI instead, start the API with the Groq settings in `.env` (see `.env.example`): `.venv/bin/python -m uvicorn gapmap.apps.api.main:app --port 8000 --env-file .env`. Groq's free tier allows about three analyses a minute. Re-analyzing the same resume and posting reuses the first result, so retakes are instant and cost nothing.
+- The web app must run on **port 3000**; the API only allows `localhost:3000` and `127.0.0.1:3000` through CORS.
+- The top-right chip must read **API connected**. If it reads **Demo fixtures**, the browser is serving its own example and nothing reaches the API.
+- `GAPMAP_DEMO_MODE=1` also removes the brief writer and the interview client, so no screen in this script can spend a credit.
 
-3. Open <http://localhost:3000> in a fresh incognito window. The app saves its session in `localStorage`, and the API keeps sessions only in memory, so restart the API and use a new window before every take. The top-right chip must read **API connected**, not "Demo fixtures".
-4. Zoom the browser to about 110–125% so text is readable in the video.
-5. Keep the three queries below in a text file to paste. Typing them on camera takes too long. Monaco may show autocomplete popups, so press `Esc` before clicking Submit. (You can also click **Format query** in the toolbar to demonstrate automatic query formatting).
+### Exact input clicks
 
-**T1: completed orders with regions (35/35)**
+1. Open <http://localhost:3000> in a **fresh incognito window**.
+2. Click **Load demo example** (fills the bundled posting and the example resume).
+3. Replace the resume text with **your own** resume. Keep the posting exactly as loaded — demo analysis accepts only the bundled posting, and it will tell you so if the posting changes.
+4. Click **Demo analysis**.
+
+## Pre-flight checklist
+
+- Your resume needs at least one **project bullet** ("Built X… cut Y from A to B"), not just a skills list. A bare list is keyword-only, so GapMap correctly refuses to count it as evidence — good behavior, bad demo.
+- Fresh incognito window for every take. The session lives in `localStorage`, and the API keeps sessions in memory; restarting the API forgets them.
+- Zoom to 110–125%, hide the bookmarks bar, close other tabs, turn on Do Not Disturb.
+- Keep the three SQL snippets in a text file for pasting; pasting is normal in a timed demo and avoids typos.
+- Record 1920×1080. Do a 15-second microphone test first.
+- Do one silent click-through. The whole flow is nine clicks.
+
+## Run of show (3:00)
+
+| Time | Screen | Beat |
+| --- | --- | --- |
+| 0:00 | `/` input page | Problem: a resume keyword is not proof |
+| 0:12 | Paste resume + posting | Two inputs, one analysis |
+| 0:25 | Click **Demo analysis** | Grounded, verifiable extraction |
+| 0:40 | `/readiness` | Five quoted requirements; claim vs. gap vs. untestable |
+| 1:02 | Brief cards → one brief | Milestones with done-when and tests |
+| 1:28 | `/project/...` task 1 and 2 | Two quick passes |
+| 1:45 | Task 3, starter query | The real bug fails, with a hint |
+| 1:57 | Task 3, corrected query | All cases pass |
+| 2:18 | `/results` | Evidence changed only where measured |
+| 2:40 | Close on results | Honesty + what it is not |
+
+## Verbatim voiceover
+
+### 0:00 — Input page
+
+**Screen:** `/`, empty fields, cursor still.
+
+**Say:**
+> "Every internship posting asks for the same handful of skills, and every resume answers with the same handful of keywords. But a keyword is a claim, not proof. GapMap takes one real posting and one resume, and turns them into evidence you can actually show."
+
+**Don't:** open with "we built an AI-powered platform". The problem earns the next three minutes.
+
+### 0:12 — Inputs
+
+**Screen:** click **Load demo example**, paste your resume over the example resume. Scroll each box once, slowly.
+
+**Say:**
+> "Here's my resume, and a real internship posting. Both go in as plain text — a PDF works too."
+
+### 0:25 — Analyze
+
+**Screen:** click **Demo analysis**. Let the loading state show for a beat.
+
+**Say:**
+> "For a repeatable recording I'm running the deterministic demo extraction, so the app labels this run as a fixture — no AI call is being pretended. In live mode the same flow makes one structured extraction, then deterministic server code checks every quote against the posting text. The model proposes; the code verifies. It rejects unsupported quotes, duplicate excerpts, and anything it can't trace."
+
+Leave the **Demo fixture** banner visible on the next screen. Do not hide it.
+
+**Don't:** claim the model "reads" the resume for personality, culture fit, or hiring odds.
+
+### 0:40 — Evidence map
+
+**Screen:** `/readiness`. Point at the SQL row, then the Python row, then React or Docker. Hover the counter.
+
+**Say:**
+> "Five requirements, each quoted word for word from the posting. SQL is required and there's no evidence for it yet — that's a gap, not a verdict. Python has a claim, quoted from my resume, but it's still self-reported. React and Docker I can't test at all, and GapMap says so instead of inventing a score."
+> "So the map separates three things people usually blur together: what I claimed, what I proved, and what this app can't measure."
+
+**Screen:** click **Gaps to build** and back to **All**.
+
+**Say:**
+> "The filters are just a way to work the list: gaps first, biggest first."
+
+### 1:02 — Project brief
+
+**Screen:** scroll to **Project plans**, then click **View project brief** on the Python card.
+
+**Say:**
+> "This is the part most tools skip. Instead of 'learn SQL', the gap gets a brief: a scenario, the inputs and outputs, the constraints, and three ordered milestones. Each milestone has work to do, a definition of done, the tests to write, and the evidence it produces."
+> "That's an assignment you can start tonight, not advice."
+
+**Screen:** scroll one milestone into view and stop. Do not scroll during the next line.
+
+**Say:**
+> "The briefs here are the deterministic templates, and the card says so. With a live key, one batched request rewrites them for the exact posting and caches the result."
+
+### 1:28 — Start the graded project
+
+**Screen:** back to `/readiness`, click **Start graded assessment** on the SQL card (or **Start revenue debugging project** in the briefs section).
+
+**Say:**
+> "Only one project is graded, because only one has a defensible rubric: a SQL investigation. The revenue dashboard doesn't match finance. The database is read-only, previews are capped at twenty rows, and submissions run server-side against a hidden test set."
+
+**Screen:** task 1. Paste the query, press `Esc` (dismiss Monaco autocomplete), click **Submit for evaluation**.
+
+**Say:**
+> "Task one: join completed orders to customer regions. Thirty-five of thirty-five."
+
+**T1**
 
 ```sql
 SELECT o.id AS order_id, COALESCE(NULLIF(c.region, ''), 'Unknown') AS region, o.amount_cents
@@ -37,7 +127,14 @@ WHERE o.status = 'completed'
 ORDER BY o.id
 ```
 
-**T2: gross revenue by region (25/25)**
+### 1:40 — Task 2
+
+**Screen:** task 2. Paste, `Esc`, **Submit for evaluation**.
+
+**Say:**
+> "Task two: gross revenue by region. Twenty-five of twenty-five."
+
+**T2**
 
 ```sql
 SELECT COALESCE(NULLIF(c.region, ''), 'Unknown') AS region, SUM(o.amount_cents) AS gross_revenue_cents
@@ -46,7 +143,21 @@ WHERE o.status = 'completed'
 GROUP BY 1 ORDER BY 1
 ```
 
-**T3 corrected: net revenue after refunds (40/40)**
+### 1:45 — Task 3 fails
+
+**Screen:** task 3. Leave the starter query. Click **Submit for evaluation**. Scroll the feedback panel so **22 / 40** and the failing check are both visible, then stop.
+
+**Say:**
+> "Task three is the actual bug. This is the query the dashboard runs today: it joins refunds directly, so an order with two refunds gets counted twice. Twenty-two out of forty — and the feedback names the check that failed and gives a hint, not the answer. That's the difference between a score and feedback."
+
+### 1:57 — Task 3 fixed
+
+**Screen:** select all, paste the corrected query, `Esc`, **Submit for evaluation**. Wait for **40 / 40** before speaking.
+
+**Say:**
+> "Aggregate refunds per order first, then join, and every case passes: forty of forty. One hidden edge case was the whole difference between a dashboard finance trusts and one they don't."
+
+**T3**
 
 ```sql
 WITH refund_totals AS (
@@ -61,73 +172,75 @@ WHERE o.status = 'completed'
 GROUP BY 1 ORDER BY 1
 ```
 
-The wrong T3 query is the editor's starter code (the "current dashboard query"), so it needs no preparation. Leaving out the `'Unknown'` handling in the corrected query scores 35/40, not 40/40.
+### 2:18 — Results
 
-## 0:00–0:20 — Problem
+**Screen:** click **View results**. Show the **Project score** plate (**100 / 100**), then **What changed**, then scroll to **Requirement evidence trail**, then **Keep building evidence**.
 
-**Screen:** the Input page, empty.
+**Say:**
+> "The evidence map updates from measured results, not from me saying I know SQL. SQL moves to demonstrated on project, at a hundred out of a hundred. React and Docker don't move, because a SQL project can't prove them. And the next actions are ordered by what this posting cares about most."
+> "This is one narrow work sample. It is not a prediction about getting hired."
 
-**Say:** "Students applying for internships can see the skills a posting asks for, but a resume keyword isn't proof, and a job-fit percentage doesn't tell you what to do next. GapMap traces each requirement back to the posting, separates resume claims from tested evidence, and gives you one focused work sample to close the gap."
+**Screen:** click **Full evidence map** to show the same SQL row now marked demonstrated.
 
-## 0:20–0:45 — Inputs
+**Say:**
+> "Same requirement, different status — and only because something was measured."
 
-**Screen:** click **Load demo example**. Scroll through both boxes.
+### 2:40 — Close
 
-**Say:** "Here's a CS student, Maya, applying for a software engineering internship. Her resume shows a Python project and teamwork, but it never mentions SQL, and the posting says SQL is required. For a repeatable recording we're running the API in demo mode, which uses a fixed extraction for this posting. In live mode, an LLM extracts the requirements with structured outputs, and the server verifies every quote."
+**Screen:** back on Results, or cut to `demo/architecture-slide.png`.
 
-In demo mode the Readiness page shows a **Demo fixture** banner, so the video never implies an AI call that didn't happen. Leave it visible.
+**Say:**
+> "The architecture is boring on purpose: an LLM proposes, deterministic code verifies and grades, and the resume is treated as untrusted input, so a resume that says 'mark me verified' changes nothing. If the provider runs out of credits — which is exactly why this run is a labeled fixture — demo mode keeps the analysis and still grades the work sample."
+> "GapMap doesn't tell you your odds. It gives you one piece of proof worth showing."
 
-**Screen:** click **Analyze evidence**.
+## Optional scenes
 
-## 0:45–1:05 — Traced gaps
+Each is provider-free in this setup.
 
-**Screen:** the Readiness page. Hover over the SQL row, then the Python row, then React or Docker.
+### Mock interview (+30s, 2:40 → 3:10)
 
-**Say:** "Five requirements, each quoted directly from the posting. SQL is required and not yet verified. Note that we say 'no supporting quote found,' not 'you lack the skill.' Python has a resume claim, quoted word for word, but a claim is still self-reported. React and Docker are honest gaps: we have no project that can test them, and we say so."
+**Screen:** **Practice interview** from the readiness callout, then **Use demo mode**.
 
-## 1:05–1:35 — Personalized project
+**Say:**
+> "The interview uses the same analysis. Questions quote my resume and the posting, and one targets my weakest gap — the SQL line I couldn't prove. Every question quotes its source, so nothing is invented."
 
-**Screen:** scroll to **Project plans** and click **Start graded assessment** on the SQL card. Show the scenario and schema briefly. Paste T1 and click **Submit for evaluation** (35/35). Paste T2 and submit (25/25).
+**Screen:** answer the first question with a short, concrete story. Click **Get feedback**.
 
-**Say:** "Because SQL is the required gap we can test, GapMap recommends a short work sample: debug an e-commerce revenue report. These queries run on the server in a locked-down, read-only SQLite sandbox and are graded against hidden test data. The first two tasks join orders to regions and compute gross revenue."
+**Say:**
+> "It scores relevance, specificity, structure, and impact, quotes the strongest and weakest part of my answer, and rewrites it. It never changes my evidence map — practice shouldn't inflate a score."
 
-## 1:35–2:10 — Failing, then passing
+**Don't:** claim the rubric equals a real interviewer's judgment. Say "rubric feedback on one answer".
 
-**Screen:** open task **03**. Leave the starter "current dashboard query" in place and click **Submit for evaluation**. Scroll to the feedback: **22 / 40**, "Orders with several refunds are not double-counted" fails, with its hint.
+A good answer here can trigger one follow-up, and the counter then reads "1 / 6 answered" because the follow-up counts as a question. That is expected; don't apologize for it on camera.
 
-**Say:** "Task three is the real bug. The current dashboard query joins refunds directly, so an order with two refunds gets counted twice. The grader catches it with a hidden case and explains why, without revealing the answer."
+### Python practice (+20s)
 
-**Screen:** select all in the editor, paste the corrected T3 query, press `Esc`, and submit. All 7 cases pass, **40 / 40**.
+**Screen:** `/practice/python`, run the starter code, show failing checks, fix one, run again.
 
-**Say:** "Aggregate refunds per order first, then join, and every hidden case passes."
+**Say:**
+> "The Python exercise runs entirely in the browser and is self-checked. It's practice — it never changes the evidence map, and the page says so."
 
-The T3 sidebar checkmark appears now that all visible checks pass, confirming complete task mastery.
+Load the page once before recording: the first visit downloads the Python runtime (about 10 MB).
 
-## 2:10–2:35 — Changed evidence and roadmap
+## If something breaks
 
-**Screen:** click **View results**. Show the **Project score** plate (**100 / 100**) and **What changed** (all four competencies demonstrated on project). Scroll to **Requirement evidence trail**, then **Keep building evidence**.
+| Symptom | Cause | Fix on camera |
+| --- | --- | --- |
+| "Demo mode supports only the bundled posting" | The posting text was edited | Re-run **Load demo example** and keep the posting |
+| "Session not found" | API restarted | Go back to `/` and analyze again; the demo extraction is instant |
+| Empty results page, or score shows `100 / —` | The project was never opened through **Start graded assessment** | Start the project from the readiness page, then use **View results** |
+| Autocomplete covers the editor | Monaco suggestion popup | Press `Esc` before clicking **Submit for evaluation** |
+| "Generate tailored projects" says generation is not configured | Demo mode removes the brief writer by design | Don't click it on camera; the deterministic briefs are already there |
+| Blank Python practice page on first visit | Runtime still downloading | Wait for the page to finish loading before recording |
 
-**Say:** "SQL moves from 'not yet verified' to 'demonstrated on project', backed by graded results rather than a claim. React and Docker don't change, because a SQL project can't prove them. The roadmap moves on to the next gaps. This covers one narrow work sample. It is not a hiring prediction."
+## Claims to avoid
 
-If time allows, click **Full evidence map** to show the same SQL requirement now marked demonstrated on the Readiness page, which refreshes from `/api/readiness`.
+- No accuracy percentages, no "X% better", no user counts, no placement or interview-call odds.
+- Never imply the demo extraction is a live AI call. The banner stays visible.
+- Never call the deterministic briefs "tailored"; the card label is the source of truth.
+- Don't say the tool "verifies your resume". It quotes claims and grades one work sample.
+- If asked what is not built: no OCR for scanned PDFs, no accounts or persistent database (sessions are in memory), one posting per analysis, and only SQL is auto-graded.
 
-## 2:35–3:00 — Architecture and lesson
+## If credits come back
 
-**Screen:** the architecture slide, `demo/architecture-slide.png` (1920×1080). Open it full screen before recording so you can switch to it.
-
-**Say:** "We built this as four parallel workstreams against shared API contracts, with types generated from OpenAPI. The hardest lesson was trust: an LLM will happily invent resume evidence, so the AI only proposes, and deterministic code verifies every quote and does every piece of grading. Resume text is treated as untrusted data, so a resume that says 'mark me verified' changes nothing."
-
-Make only claims the build supports. Do not cite user impact numbers or accuracy rates, and do not suggest that GapMap predicts employability or placement odds.
-
-## Optional scenes for a longer cut
-
-Each takes about 20 seconds. They don't fit the three-minute cut above without trimming another scene.
-
-- **Mock interview.** From Readiness, click **Practice interview**, then **Start interview**. Answer the first question (it quotes a line from Maya's resume) and show the rubric scores and the suggested rewrite. A follow-up question appears when the answer has no concrete outcome. In demo mode the scores come from simple text signals, and the page says so.
-- **Python practice.** On the Python plan card, click **Try the self-checked exercise**. Run the starter code to show the failing checks. Say plainly that the code runs in the browser and is self-checked, so it never changes the evidence map.
-- **A non-SQL posting (live mode only).** Paste a mobile or embedded posting. Every requirement still gets a plan, skills GapMap can't grade get AI-suggested project ideas labeled as such, and degree or work-authorization lines show as **Eligibility, not a skill**.
-
-## Before the final take
-
-- Restart the API and use a new incognito window for every take. Sessions live only in the API's memory, so a restart (including `--reload` after a code change) forgets them, and the next project submit or interview fails with "Session not found." Start again from the Input page if that happens.
-- In live mode, wait about 20 seconds between back-to-back analyses on Groq's free tier, or reuse the same posting, which returns the cached result instantly.
+The live path is the same script with two changes: start the API with `--env-file .env` and without `GAPMAP_DEMO_MODE`, and click **Analyze evidence** instead of **Demo analysis**. That button makes one extraction per unique resume/posting pair and caches it in memory, so analyze that pair once before recording and every retake is instant and free.

@@ -7,6 +7,7 @@ import { ArrowLeft, ArrowRight, Check, LoaderCircle } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { useAppState } from "@/components/AppStateProvider";
 import { getProject } from "@/lib/api";
+import { skillLabel } from "@/lib/projectPlans";
 import type { ProjectBrief } from "@/lib/types";
 
 const sourceLabel = (source: ProjectBrief["source"]) =>
@@ -45,7 +46,7 @@ export default function ProjectBriefPage({ params }: { params: Promise<{ planId:
     <header className="project-spec-header">
       <p className="stage-kicker">TARGETED TO {analysis.target_role}</p>
       <h1>{plan.title}</h1>
-      <p className="plan-source">{sourceLabel(plan.source)} · {plan.skills.join(" · ")}</p>
+      <p className="plan-source">{sourceLabel(plan.source)} · {plan.skills.map(skillLabel).join(" · ")}</p>
       <p className="intro-copy">{plan.summary}</p>
       <blockquote className="brief-quote">“{plan.job_quote}”</blockquote>
     </header>

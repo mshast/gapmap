@@ -487,3 +487,40 @@ def test_list_markers_are_dropped_from_quotes(quote, expected):
     from gapmap.apps.api.services.analysis.evidence import strip_list_marker
 
     assert strip_list_marker(quote) == expected
+
+
+async def test_repeat_analysis_reuses_the_extraction(extraction_result):
+    fixture = load_demo_fixture()
+    extractor = FakeExtractor(extraction_result)
+    service = StructuredAnalysisService(extractor=extractor)
+    first = await service.analyze(fixture.resume_text, fixture.job_description)
+    second = await service.analyze(fixture.resume_text, fixture.job_description)
+    assert extractor.calls == 1
+    assert second.model_dump() == first.model_dump()
+    await service.analyze(fixture.resume_text + "\nBuilt a SQL reporting service.", fixture.job_description)
+    assert extractor.calls == 2
+
+
+async def test_failed_grounding_is_not_cached_and_cache_can_be_disabled(extraction_result):
+    fixture = load_demo_fixture()
+    extractor = FakeExtractor(extraction_result)
+    unrelated = "A different posting with none of the quoted requirements in it."
+    service = StructuredAnalysisService(extractor=extractor)
+    for _ in range(2):
+        with pytest.raises(AnalysisUnavailableError):
+            await service.analyze(fixture.resume_text, unrelated)
+    assert extractor.calls == 4  # each attempt extracts and re-samples once
+
+    uncached = StructuredAnalysisService(extractor=FakeExtractor(extraction_result), cache_size=0)
+    for _ in range(2):
+        await uncached.analyze(fixture.resume_text, fixture.job_description)
+    assert uncached._extractor.calls == 2
+
+
+def test_resume_quotes_drop_list_bullets():
+    evidence = match_resume_evidence(
+        ["- Built a Python service that validates campus event data."],
+        "Projects\n- Built a Python service that validates campus event data.",
+        ["python"],
+    )
+    assert [item.quote for item in evidence] == ["Built a Python service that validates campus event data."]

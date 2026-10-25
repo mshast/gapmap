@@ -150,6 +150,8 @@ def match_resume_evidence(
     seen = set()
     for proposed in proposed_quotes:
         quote = verified_excerpt(proposed, resume_text)
+        if quote is not None:
+            quote = strip_list_marker(quote)
         if quote is None or quote in seen:
             continue
         seen.add(quote)

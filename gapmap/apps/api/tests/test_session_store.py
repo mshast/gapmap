@@ -97,6 +97,28 @@ async def test_all_sql_subskills_are_required_for_full_demonstration(
     assert sql.uncovered_skill_ids == []
 
 
+async def test_requirements_lookup_checks_ownership_and_returns_current_scores(
+    demo_store: InMemorySessionStore,
+) -> None:
+    first = demo_store.create_analysis(await demo_draft())
+    second = demo_store.create_analysis(await demo_draft())
+    for index, skill_id in enumerate(("sql_joins", "sql_filtering", "sql_aggregation"), 1):
+        demo_store.record_submission(
+            first.session_id,
+            "revenue-debug-001",
+            f"t{index}",
+            submission(f"t{index}", 10, 10, [demonstrated(skill_id)]),
+        )
+
+    requirements = demo_store.requirements_for(first.session_id, first.analysis_id)
+
+    assert requirements is not None
+    assert next(item for item in requirements if item.id == "req-sql").evidence_status == (
+        EvidenceStatus.DEMONSTRATED_ON_PROJECT
+    )
+    assert demo_store.requirements_for(first.session_id, second.analysis_id) is None
+
+
 async def test_unknown_session_is_not_mutated(demo_store: InMemorySessionStore) -> None:
     attempt = submission("t1", 10, 10, [demonstrated("sql_joins")])
     assert not demo_store.record_submission(uuid4(), "revenue-debug-001", "t1", attempt)

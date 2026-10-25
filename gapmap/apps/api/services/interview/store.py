@@ -41,20 +41,10 @@ class InMemoryInterviewStore:
 
 
 class SessionStoreAnalysisSource:
-    """Read-only adapter over the shared session store's public methods.
-
-    Limitation: the public API cannot confirm that analysis_id belongs to
-    session_id; it only confirms both exist. A session-store method that checks
-    ownership should replace this adapter.
-    """
+    """Read-only adapter over the shared session store's public methods."""
 
     def __init__(self, session_store: InMemorySessionStore) -> None:
         self._session_store = session_store
 
     def load_requirements(self, session_id: UUID, analysis_id: UUID) -> list[Requirement] | None:
-        if self._session_store.recommendation_for(analysis_id) is None:
-            return None
-        # Readiness includes project results, so gap probes skip skills already
-        # demonstrated on the work sample.
-        readiness = self._session_store.readiness_for(session_id)
-        return readiness.requirements if readiness is not None else None
+        return self._session_store.requirements_for(session_id, analysis_id)

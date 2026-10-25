@@ -4,12 +4,15 @@ import type { PracticeRun } from "@/lib/pythonPractice";
 export type Analysis = components["schemas"]["AnalysisResponse"];
 export type Requirement = components["schemas"]["Requirement"];
 export type ProjectPlan = components["schemas"]["ProjectPlan"];
+export type ProjectBrief = components["schemas"]["ProjectBrief"];
+export type ProjectBriefs = components["schemas"]["ProjectBriefsResponse"];
 export type Readiness = components["schemas"]["ReadinessResponse"];
 export type Project = components["schemas"]["ProjectResponse"];
 export type ProjectTask = components["schemas"]["ProjectTask"];
 export type RunResult = components["schemas"]["RunResponse"];
 export type Submission = components["schemas"]["SubmitResponse"];
 export type EvidenceStatus = components["schemas"]["EvidenceStatus"];
+
 export type InterviewStart = components["schemas"]["StartInterviewResponse"];
 export type InterviewQuestion = components["schemas"]["InterviewQuestion"];
 export type InterviewFeedback = components["schemas"]["AnswerFeedback"];
@@ -35,6 +38,8 @@ export type AppState = {
   previews: Record<string, RunResult>;
   submissions: Record<string, Submission>;
   readiness: Readiness | null;
+  // Briefs are stored with their analysis id so a stale set can never render.
+  plans: ProjectBriefs | null;
   interview: InterviewState | null;
   // Self-checked Python practice, keyed by task id. Never sent to the API.
   practice: Record<string, { code: string; run: PracticeRun | null }>;
@@ -49,6 +54,7 @@ export const initialState: AppState = {
   previews: {},
   submissions: {},
   readiness: null,
+  plans: null,
   interview: null,
   practice: {},
 };

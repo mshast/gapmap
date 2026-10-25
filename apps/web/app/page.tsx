@@ -86,7 +86,7 @@ export default function HomePage() {
       const result = resumeFile && !isMockMode
         ? await analyzePdf(resumeFile, state.jobText)
         : await analyze(state.resumeText, state.jobText);
-      setState((current) => ({ ...current, analysis: result, project: null, readiness: null, previews: {}, submissions: {}, interview: null }));
+      setState((current) => ({ ...current, analysis: result, project: null, readiness: null, previews: {}, submissions: {}, plans: null, interview: null }));
       router.push("/readiness");
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "We could not analyze these inputs. Please try again.");

@@ -4,11 +4,13 @@ import type {
   InterviewStart,
   InterviewSummary,
   Project,
+  ProjectBriefs,
   Readiness,
   RunResult,
   Submission,
   InterviewQuestion,
 } from "@/lib/types";
+import { fixturePlans } from "@/lib/fixturePlans";
 
 export const isMockMode = process.env.NEXT_PUBLIC_GAPMAP_MOCK !== "false";
 const apiBase = process.env.NEXT_PUBLIC_GAPMAP_API_URL ?? "";
@@ -105,10 +107,6 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return body as T;
 }
 
-const mockPlan = (id: string, title: string, skill: string, quote: string, deliverable: string, steps: string[]) => ({
-  id, title, skill_ids: [skill], why: `Builds direct evidence for “${quote}”`, deliverable, steps, source: "template" as const,
-});
-
 const mockRequirements = (resume: string) => {
   const pythonQuote = resume.match(/- Built a Python[^\n]*/)?.[0]?.replace(/^- /, "");
   const teamworkQuote = resume.match(/- Collaborated[^\n]*/)?.[0]?.replace(/^- /, "");
@@ -125,13 +123,6 @@ const mockRequirements = (resume: string) => {
       evidence_status: "unverified" as const,
       verification_capability: "available" as const,
       uncovered_skill_ids: [],
-      project_plans: [{
-        id: "revenue-debug-001", title: "Investigate an E-commerce Revenue Bug", skill_ids: ["sql_joins", "sql_filtering", "sql_aggregation"],
-        why: "Tests the SQL relational querying requirement with hidden, graded cases.",
-        deliverable: "A tested SQL report with correct gross and net revenue by region.",
-        steps: ["Trace valid orders to regions", "Recalculate gross revenue", "Correct net revenue after refunds"],
-        source: "graded" as const, runnable_project_id: "revenue-debug-001",
-      }],
     },
     {
       id: "req-python",
@@ -145,9 +136,6 @@ const mockRequirements = (resume: string) => {
       evidence_status: pythonQuote ? ("resume_evidence" as const) : ("unverified" as const),
       verification_capability: "not_assessable" as const,
       uncovered_skill_ids: ["python"],
-      project_plans: [mockPlan("plan-python", "Build a Python workflow", "python", "Experience with Python is required.",
-        "A tested Python tool with documented inputs, outputs, and failure cases.",
-        ["Choose one real workflow from the role", "Implement the core path and validation", "Add tests and a short usage guide"])],
     },
     {
       id: "req-react",
@@ -161,9 +149,6 @@ const mockRequirements = (resume: string) => {
       evidence_status: "unverified" as const,
       verification_capability: "not_assessable" as const,
       uncovered_skill_ids: ["react"],
-      project_plans: [mockPlan("plan-react", "Ship a React workflow", "react", "Experience building user interfaces with React is preferred.",
-        "A responsive React feature with loading, error, empty, and success states.",
-        ["Turn the requirement into one user task", "Build accessible interactions", "Add responsive and interaction tests"])],
     },
     {
       id: "req-docker",
@@ -177,9 +162,6 @@ const mockRequirements = (resume: string) => {
       evidence_status: "unverified" as const,
       verification_capability: "not_assessable" as const,
       uncovered_skill_ids: ["docker"],
-      project_plans: [mockPlan("plan-docker", "Containerize a production-shaped service", "docker", "Familiarity with Docker containers is preferred.",
-        "A minimal container with a health check and one-command startup.",
-        ["Create a small production image", "Add runtime health and configuration", "Document build, run, and recovery"])],
     },
     {
       id: "req-collaboration",
@@ -193,10 +175,6 @@ const mockRequirements = (resume: string) => {
       evidence_status: teamworkQuote ? ("resume_evidence" as const) : ("unverified" as const),
       verification_capability: "not_assessable" as const,
       uncovered_skill_ids: ["collaboration"],
-      project_plans: [mockPlan("plan-req-collaboration", "Create a focused proof of work: Collaborative problem-solving", "collaboration",
-        "Strong collaborative problem-solving skills are preferred.",
-        "A reviewable artifact with a clear problem, implementation, and evidence of the result.",
-        ["Translate the requirement into a concrete scenario", "Build the smallest useful artifact", "Document decisions, tests, and outcome"])],
     },
   ];
 };
@@ -206,18 +184,16 @@ export async function getDemoFixture(): Promise<{ resume_text: string; job_descr
   return request("/api/demo/fixture");
 }
 
-const sameText = (a: string, b: string) => a.split(/\s+/).join(" ").trim() === b.split(/\s+/).join(" ").trim();
-
 export async function analyze(resumeText: string, jobDescription: string): Promise<Analysis> {
   if (isMockMode) {
-    if (!sameText(jobDescription, demoJob)) {
-      throw new Error("Demo mode only analyzes the example posting. To analyze your own, run the API and start the web app with NEXT_PUBLIC_GAPMAP_MOCK=false.");
-    }
     return {
       session_id: crypto.randomUUID(),
       analysis_id: crypto.randomUUID(),
       analysis_mode: "demo",
-      warnings: ["Fixture mode: no AI service ran."],
+      warnings: [
+        "Fixture mode: the pasted posting was not analyzed. This is the bundled example role.",
+        "Fixture mode: no AI service ran. Connect the API for live analysis.",
+      ],
       target_role: "Software Engineering Intern",
       recommended_project_id: demoProject.id,
       requirements: mockRequirements(resumeText),
@@ -329,6 +305,30 @@ export async function getReadiness(sessionId: string): Promise<Readiness> {
   return request(`/api/readiness?session_id=${encodeURIComponent(sessionId)}`);
 }
 
+export async function getProjectBriefs(
+  sessionId: string,
+  analysisId: string,
+): Promise<ProjectBriefs> {
+  if (isMockMode) return fixturePlans(sessionId, analysisId);
+  return request(
+    `/api/project-briefs?session_id=${encodeURIComponent(sessionId)}&analysis_id=${encodeURIComponent(analysisId)}`,
+  );
+}
+
+export async function generateProjectBriefs(
+  sessionId: string,
+  analysisId: string,
+): Promise<ProjectBriefs> {
+  if (isMockMode) return fixturePlans(sessionId, analysisId);
+  return request("/api/project-briefs/generate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ session_id: sessionId, analysis_id: analysisId }),
+  });
+}
+
+const interviewNeedsApi = "Interview practice needs the GapMap API. Start it (GAPMAP_DEMO_MODE=1 for the offline demo) and run the web app with NEXT_PUBLIC_GAPMAP_MOCK=false.";
+
 const demoInterviewQuestions: InterviewQuestion[] = [
   {
     id: "q1",
@@ -366,6 +366,7 @@ const demoInterviewQuestions: InterviewQuestion[] = [
     requirement_id: "req-docker",
   },
 ];
+
 
 export async function startInterview(sessionId: string, analysisId: string): Promise<InterviewStart> {
   if (isMockMode) {

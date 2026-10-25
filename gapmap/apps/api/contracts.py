@@ -122,6 +122,51 @@ class ProjectResponse(StrictModel):
     competencies: list[Identifier]
 
 
+BriefSource = Literal["generated", "fallback"]
+BriefTitle = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=120)]
+BriefText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=240)]
+BriefProse = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=700)]
+
+
+class BriefMilestone(StrictModel):
+    title: BriefTitle
+    work: list[BriefText] = Field(min_length=2, max_length=3)
+    acceptance_criteria: list[BriefText] = Field(min_length=2, max_length=4)
+    tests: list[BriefText] = Field(min_length=2, max_length=4)
+    evidence: BriefText
+
+
+class ProjectBrief(StrictModel):
+    id: Identifier
+    requirement_id: Identifier
+    title: BriefTitle
+    summary: BriefProse
+    job_quote: str
+    skills: list[Identifier] = Field(min_length=1, max_length=8)
+    scenario: BriefProse
+    inputs: list[BriefText] = Field(min_length=1, max_length=6)
+    outputs: list[BriefText] = Field(min_length=1, max_length=6)
+    constraints: list[BriefText] = Field(min_length=1, max_length=6)
+    deliverables: list[BriefText] = Field(min_length=1, max_length=6)
+    milestones: list[BriefMilestone] = Field(min_length=3, max_length=5)
+    source: BriefSource
+    # Only the existing graded SQL project may set this.
+    runnable_project_id: str | None = None
+
+
+class GenerateProjectBriefsRequest(StrictModel):
+    session_id: UUID
+    analysis_id: UUID
+
+
+class ProjectBriefsResponse(StrictModel):
+    session_id: UUID
+    analysis_id: UUID
+    plans: list[ProjectBrief] = Field(default_factory=list, max_length=4)
+    source: Literal["generated", "fallback", "mixed"]
+    message: str
+
+
 class RunRequest(StrictModel):
     session_id: UUID
     task_id: Identifier

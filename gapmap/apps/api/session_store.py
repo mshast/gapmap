@@ -15,6 +15,7 @@ from gapmap.apps.api.contracts import (
     CompetencyScore,
     EvidenceStatus,
     ProjectRecommendationResponse,
+    ProjectBriefsResponse,
     ReadinessResponse,
     Requirement,
     SubmitResponse,
@@ -37,6 +38,7 @@ class InMemorySessionStore:
         self._lock = RLock()
         self._sessions: dict[UUID, _Session] = {}
         self._analysis_to_session: dict[UUID, UUID] = {}
+        self._plans: dict[tuple[UUID, UUID], ProjectBriefsResponse] = {}
 
     def create_analysis(self, draft: AnalysisDraft) -> AnalysisResponse:
         with self._lock:
@@ -62,6 +64,45 @@ class InMemorySessionStore:
                 else "No available project assesses the current requirements."
             )
             return ProjectRecommendationResponse(project_id=project_id, reason=reason)
+
+    def target_role_for(self, session_id: UUID, analysis_id: UUID) -> str | None:
+        with self._lock:
+            session = self._sessions.get(session_id)
+            if session is None or session.analysis.analysis_id != analysis_id:
+                return None
+            return session.analysis.target_role
+
+    def load_plans(
+        self, session_id: UUID, analysis_id: UUID,
+    ) -> ProjectBriefsResponse | None:
+        """Stored briefs for the exact (session, analysis) pair, never a neighbor's."""
+        with self._lock:
+            session = self._sessions.get(session_id)
+            if session is None or session.analysis.analysis_id != analysis_id:
+                return None
+            stored = self._plans.get((session_id, analysis_id))
+            return stored.model_copy(deep=True) if stored is not None else None
+
+    def store_plans(
+        self, session_id: UUID, analysis_id: UUID, plans: ProjectBriefsResponse,
+    ) -> bool:
+        """Cache validated briefs; return false for an unknown or mismatched pair."""
+        with self._lock:
+            session = self._sessions.get(session_id)
+            if session is None or session.analysis.analysis_id != analysis_id:
+                return False
+            self._plans[(session_id, analysis_id)] = plans.model_copy(deep=True)
+            return True
+
+    def requirements_for(
+        self, session_id: UUID, analysis_id: UUID,
+    ) -> list[Requirement] | None:
+        with self._lock:
+            session = self._sessions.get(session_id)
+            if session is None or session.analysis.analysis_id != analysis_id:
+                return None
+            readiness = self.readiness_for(session_id)
+            return readiness.requirements if readiness is not None else None
 
     def record_submission(
         self,

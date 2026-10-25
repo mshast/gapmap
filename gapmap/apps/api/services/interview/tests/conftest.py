@@ -57,10 +57,15 @@ def make_api():
     """The shared app with this router mounted, as the integration hand-off describes."""
 
     def build(interview_client) -> tuple[TestClient, FastAPI]:
-        app = create_app(analysis_service=StructuredAnalysisService(demo_mode=True))
-        app.state.interview_service = InterviewService(
+        store = InMemorySessionStore()
+        service = InterviewService(
             interview_client, InMemoryInterviewStore(),
-            SessionStoreAnalysisSource(app.state.session_store),
+            SessionStoreAnalysisSource(store),
+        )
+        app = create_app(
+            analysis_service=StructuredAnalysisService(demo_mode=True),
+            session_store=store,
+            interview_service=service,
         )
         return TestClient(app), app
 

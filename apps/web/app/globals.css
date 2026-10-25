@@ -157,6 +157,7 @@ h3 { font-size: 15px; line-height: 1.35; }
 .task-prompt h2 { margin: 0; font-size: 23px; }
 .task-competency { max-width: 220px; color: #859189; font: 11px/1.5 var(--mono); text-align: right; }
 .task-instructions { margin: 9px 0 13px; color: #65766c; font-size: 12px; }
+.editor-toolbar-actions { display: flex; align-items: center; gap: 12px; }
 .editor-toolbar { height: 32px; padding: 0 9px; display: flex; align-items: center; justify-content: space-between; color: #dbe8df; background: #1d312b; font: 11px var(--mono); }
 .editor-language { margin-left: 6px; color: #98b39e; }
 .editor-toolbar .text-button { color: #c1d4c7; }
@@ -256,6 +257,49 @@ h3 { font-size: 15px; line-height: 1.35; }
 .plan-card ol { margin: 12px 0 0; padding-left: 20px; color: #52665a; font-size: 11px; line-height: 1.8; }
 .results-stage-header { margin-bottom: 20px; }
 .results-recommendations { margin-top: 24px; }
+.project-spec-header { max-width: 800px; margin: 28px 0 30px; }
+.project-spec-header h1 { margin-bottom: 10px; font-size: 46px; }
+.project-spec-grid { display: grid; grid-template-columns: .8fr 1.2fr; gap: 14px; }
+.project-spec-block { padding: 22px; background: var(--surface); border: 1px solid var(--line); }
+.project-spec-block h2 { margin: 0 0 12px; font-size: 22px; }
+.project-spec-block > p:not(.eyebrow) { color: var(--muted); font-size: 12px; line-height: 1.7; }
+.project-spec-skills { margin-top: 24px; padding-top: 14px; display: grid; gap: 5px; border-top: 1px solid var(--line); }
+.project-spec-skills span { color: var(--muted); font-size: 10px; }
+.project-spec-skills strong { color: var(--forest); font: 10px/1.5 var(--mono); }
+.project-spec-steps { margin: 0; padding: 0; list-style: none; }
+.project-spec-steps li { padding: 13px 0; display: grid; grid-template-columns: 30px 1fr; gap: 10px; border-top: 1px solid var(--line); }
+.project-spec-number { color: var(--rust); font: 10px var(--mono); }
+.project-spec-steps strong { display: block; color: var(--ink); font-size: 12px; }
+.project-spec-steps div span { margin-top: 6px; display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 10px; }
+.project-spec-actions { margin-top: 14px; padding: 16px 0; display: flex; align-items: center; }
+.project-spec-actions p { margin: 0; color: var(--muted); font-size: 11px; }
+
+/* Grounded project briefs from the API. */
+.plan-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.plan-status { margin: -4px 0 14px; color: var(--muted); font-size: 11px; }
+.plan-meta { margin: 0; color: #7d8b83; font: 10px var(--mono); }
+.plan-card-actions { display: flex; flex-direction: column; gap: 8px; align-items: stretch; min-width: 195px; }
+.plan-skeleton { display: grid; gap: 10px; min-height: 190px; align-content: start; }
+.plan-skeleton span { height: 12px; background: #eef2f3; }
+.plan-skeleton span:nth-child(2) { width: 80%; }
+.plan-skeleton span:nth-child(3) { width: 55%; }
+.plan-source { margin: 0 0 12px; color: var(--forest); font: 10px/1.5 var(--mono); letter-spacing: .03em; text-transform: uppercase; }
+.brief-quote { margin: 16px 0 0; padding-left: 12px; color: #5a6b61; border-left: 2px solid var(--line-dark); font-family: Georgia, serif; font-size: 13px; }
+.brief-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.brief-columns h3, .milestone-grid h4 { margin: 0 0 6px; color: var(--forest); font: 10px var(--mono); letter-spacing: .04em; text-transform: uppercase; }
+.brief-list { margin: 0; padding-left: 16px; color: var(--muted); font-size: 12px; line-height: 1.65; }
+.brief-list li { margin-bottom: 5px; }
+.brief-milestones { margin-top: 26px; }
+.milestone-list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line-dark); }
+.milestone { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 10px; padding: 20px 0; border-bottom: 1px solid var(--line); }
+.milestone h3 { margin: 0 0 10px; font-size: 18px; }
+.milestone-index { padding-top: 3px; color: var(--rust); font: 11px var(--mono); }
+.milestone-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.milestone-evidence { margin: 12px 0 0; display: flex; align-items: flex-start; gap: 7px; color: var(--forest); font-size: 11px; }
+.milestone-evidence svg { flex: none; margin-top: 2px; }
+.competency-feedback { margin-top: 12px; border-top: 1px solid var(--line); }
+.competency-feedback-row { padding: 7px 0; display: flex; align-items: center; justify-content: space-between; gap: 10px; color: var(--muted); border-bottom: 1px solid #eef2f3; font-size: 11px; text-transform: capitalize; }
+.competency-feedback-row .status-pill { text-transform: none; }
 
 @media (max-width: 800px) {
   .topbar { padding: 0 18px; gap: 18px; }
@@ -273,6 +317,10 @@ h3 { font-size: 15px; line-height: 1.35; }
   .stage-header, .section-heading { align-items: flex-start; flex-direction: column; }
   .plan-grid { grid-template-columns: 1fr; }
   .plan-card-primary { grid-template-columns: 1fr; }
+  .project-spec-grid { grid-template-columns: 1fr; }
+  .brief-columns, .milestone-grid { grid-template-columns: 1fr; }
+  .plan-card-actions { min-width: 0; }
+  .milestone { grid-template-columns: 26px minmax(0, 1fr); }
 }
 @media (max-width: 600px) {
   .topbar { height: auto; min-height: 58px; padding: 8px 14px; flex-wrap: wrap; gap: 4px 10px; }

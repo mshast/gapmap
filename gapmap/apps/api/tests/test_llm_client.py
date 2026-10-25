@@ -97,3 +97,98 @@ async def test_client_rejects_oversized_input_before_request():
     client = StructuredLLMClient("test-only-key", transport=httpx.MockTransport(handler))
     with pytest.raises(ExtractionError, match="size limit"):
         await client.extract("x" * 50_001, "SQL")
+
+
+class Sleeps:
+    def __init__(self):
+        self.calls = []
+
+    async def __call__(self, seconds):
+        self.calls.append(seconds)
+
+
+def rate_limited(retry_after="3"):
+    return httpx.Response(429, headers={"retry-after": retry_after}, json={"error": {"message": "slow down"}})
+
+
+async def test_short_rate_limits_are_waited_out(extraction_result):
+    responses = [rate_limited(), rate_limited(), httpx.Response(200, json=completion(extraction_result.model_dump_json()))]
+    sleeps = Sleeps()
+    client = StructuredLLMClient(
+        "test-only-key", transport=httpx.MockTransport(lambda request: responses.pop(0)), sleep=sleeps,
+    )
+    result = await client.extract("resume", "job")
+    assert result.target_role == extraction_result.target_role
+    assert sleeps.calls == [3.5, 3.5]
+
+
+async def test_long_rate_limits_fail_fast_with_the_wait_time():
+    sleeps = Sleeps()
+    client = StructuredLLMClient(
+        "test-only-key", transport=httpx.MockTransport(lambda request: rate_limited("33")), sleep=sleeps,
+    )
+    with pytest.raises(ExtractionError) as caught:
+        await client.extract("resume", "job")
+    assert caught.value.reason == "rate_limited"
+    assert caught.value.retry_after == 33
+    assert sleeps.calls == []
+
+
+def schema_rejection(generation):
+    return httpx.Response(400, json={"error": {
+        "message": "Failed to generate JSON.", "code": "json_validate_failed", "failed_generation": generation,
+    }})
+
+
+async def test_schema_rejection_is_sampled_again_once(extraction_result):
+    responses = [schema_rejection('{"target_role": "x", "requirements": ['),
+                 httpx.Response(200, json=completion(extraction_result.model_dump_json()))]
+    client = StructuredLLMClient("test-only-key", transport=httpx.MockTransport(lambda request: responses.pop(0)))
+    assert (await client.extract("resume", "job")).requirements
+
+
+async def test_prose_instead_of_json_is_a_refusal():
+    calls = []
+
+    def handler(request):
+        calls.append(request)
+        return schema_rejection("I'm sorry, but I can't comply with that.")
+
+    client = StructuredLLMClient("test-only-key", transport=httpx.MockTransport(handler))
+    with pytest.raises(ExtractionError) as caught:
+        await client.extract("resume", "job")
+    assert caught.value.reason == "refused"
+    assert len(calls) == 1
+
+
+async def test_rejected_key_is_reported_as_auth():
+    client = StructuredLLMClient(
+        "test-only-key", transport=httpx.MockTransport(lambda request: httpx.Response(401, json={})),
+    )
+    with pytest.raises(ExtractionError) as caught:
+        await client.extract("resume", "job")
+    assert caught.value.reason == "auth"
+
+
+def test_groq_gpt_oss_defaults_to_low_reasoning(monkeypatch):
+    from gapmap.apps.api.services.analysis.llm_client import groq_reasoning_effort
+
+    monkeypatch.delenv("GROQ_REASONING_EFFORT", raising=False)
+    assert groq_reasoning_effort("openai/gpt-oss-20b") == "low"
+    assert groq_reasoning_effort("llama-3.3-70b-versatile") is None
+    monkeypatch.setenv("GROQ_REASONING_EFFORT", "medium")
+    assert groq_reasoning_effort("openai/gpt-oss-20b") == "medium"
+
+
+async def test_reasoning_effort_is_sent_only_when_set(extraction_result):
+    payloads = []
+
+    def handler(request):
+        payloads.append(json.loads(request.content))
+        return httpx.Response(200, json=completion(extraction_result.model_dump_json()))
+
+    for effort in (None, "low"):
+        client = StructuredLLMClient("test-only-key", transport=httpx.MockTransport(handler), reasoning_effort=effort)
+        await client.extract("resume", "job")
+    assert "reasoning_effort" not in payloads[0]
+    assert payloads[1]["reasoning_effort"] == "low"

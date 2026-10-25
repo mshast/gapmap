@@ -9,7 +9,7 @@ from typing import Annotated
 
 from pydantic import Field, StringConstraints
 
-from gapmap.apps.api.contracts import PlanMilestone, PlanSource, PlanText, PlanTitle, PlanProse, StrictModel
+from gapmap.apps.api.contracts import BriefMilestone, BriefSource, BriefText, BriefTitle, BriefProse, StrictModel
 
 
 RequirementId = Annotated[
@@ -18,37 +18,37 @@ RequirementId = Annotated[
 
 
 class MilestoneDraft(StrictModel):
-    title: PlanTitle
-    work: list[PlanText] = Field(min_length=2, max_length=3)
-    acceptance_criteria: list[PlanText] = Field(min_length=2, max_length=4)
-    tests: list[PlanText] = Field(min_length=2, max_length=4)
-    evidence: PlanText
+    title: BriefTitle
+    work: list[BriefText] = Field(min_length=2, max_length=3)
+    acceptance_criteria: list[BriefText] = Field(min_length=2, max_length=4)
+    tests: list[BriefText] = Field(min_length=2, max_length=4)
+    evidence: BriefText
 
 
-class PlanDraft(StrictModel):
+class BriefDraft(StrictModel):
     requirement_id: RequirementId
-    title: PlanTitle
-    summary: PlanProse
-    scenario: PlanProse
-    inputs: list[PlanText] = Field(min_length=1, max_length=6)
-    outputs: list[PlanText] = Field(min_length=1, max_length=6)
-    constraints: list[PlanText] = Field(min_length=1, max_length=6)
-    deliverables: list[PlanText] = Field(min_length=1, max_length=6)
+    title: BriefTitle
+    summary: BriefProse
+    scenario: BriefProse
+    inputs: list[BriefText] = Field(min_length=1, max_length=6)
+    outputs: list[BriefText] = Field(min_length=1, max_length=6)
+    constraints: list[BriefText] = Field(min_length=1, max_length=6)
+    deliverables: list[BriefText] = Field(min_length=1, max_length=6)
     milestones: list[MilestoneDraft] = Field(min_length=3, max_length=5)
 
 
-class PlanSetDraft(StrictModel):
-    plans: list[PlanDraft] = Field(min_length=1, max_length=4)
+class BriefSetDraft(StrictModel):
+    plans: list[BriefDraft] = Field(min_length=1, max_length=4)
 
 
 # Re-exported so the service and tests agree on the public shapes.
 __all__ = [
     "MilestoneDraft",
-    "PlanDraft",
-    "PlanSetDraft",
-    "PlanMilestone",
-    "PlanSource",
-    "PlanText",
-    "PlanTitle",
-    "PlanProse",
+    "BriefDraft",
+    "BriefSetDraft",
+    "BriefMilestone",
+    "BriefSource",
+    "BriefText",
+    "BriefTitle",
+    "BriefProse",
 ]

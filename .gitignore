@@ -29,3 +29,6 @@ apps/web/public/pdf.worker.min.mjs
 **/.impeccable/live/pending-manual-edits.json
 **/.impeccable/live/deferred-svelte-component-accepts.json
 **/.impeccable/live/*.png
+# Local browser-automation logs and screenshots
+.playwright-cli/
+output/

@@ -123,15 +123,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/project-plans": {
+    "/api/project-briefs": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Project Plans */
-        get: operations["project_plans_api_project_plans_get"];
+        /** Project Briefs */
+        get: operations["project_briefs_api_project_briefs_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -140,7 +140,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/project-plans/generate": {
+    "/api/project-briefs/generate": {
         parameters: {
             query?: never;
             header?: never;
@@ -149,8 +149,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Generate Project Plans */
-        post: operations["generate_project_plans_api_project_plans_generate_post"];
+        /** Generate Project Briefs */
+        post: operations["generate_project_briefs_api_project_briefs_generate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -334,6 +334,19 @@ export interface components {
              */
             resume_file: string;
         };
+        /** BriefMilestone */
+        BriefMilestone: {
+            /** Acceptance Criteria */
+            acceptance_criteria: string[];
+            /** Evidence */
+            evidence: string;
+            /** Tests */
+            tests: string[];
+            /** Title */
+            title: string;
+            /** Work */
+            work: string[];
+        };
         /** CompetencyEvidence */
         CompetencyEvidence: {
             /** Earned */
@@ -406,8 +419,8 @@ export interface components {
          * @enum {string}
          */
         EvidenceStatus: "unverified" | "resume_evidence" | "partially_demonstrated" | "demonstrated_on_project";
-        /** GeneratePlansRequest */
-        GeneratePlansRequest: {
+        /** GenerateProjectBriefsRequest */
+        GenerateProjectBriefsRequest: {
             /**
              * Analysis Id
              * Format: uuid
@@ -473,21 +486,8 @@ export interface components {
             total_questions: number;
             weakest_answer: components["schemas"]["AnswerHighlight"];
         };
-        /** PlanMilestone */
-        PlanMilestone: {
-            /** Acceptance Criteria */
-            acceptance_criteria: string[];
-            /** Evidence */
-            evidence: string;
-            /** Tests */
-            tests: string[];
-            /** Title */
-            title: string;
-            /** Work */
-            work: string[];
-        };
-        /** ProjectPlan */
-        ProjectPlan: {
+        /** ProjectBrief */
+        ProjectBrief: {
             /** Constraints */
             constraints: string[];
             /** Deliverables */
@@ -499,7 +499,7 @@ export interface components {
             /** Job Quote */
             job_quote: string;
             /** Milestones */
-            milestones: components["schemas"]["PlanMilestone"][];
+            milestones: components["schemas"]["BriefMilestone"][];
             /** Outputs */
             outputs: string[];
             /** Requirement Id */
@@ -520,8 +520,8 @@ export interface components {
             /** Title */
             title: string;
         };
-        /** ProjectPlansResponse */
-        ProjectPlansResponse: {
+        /** ProjectBriefsResponse */
+        ProjectBriefsResponse: {
             /**
              * Analysis Id
              * Format: uuid
@@ -530,7 +530,7 @@ export interface components {
             /** Message */
             message: string;
             /** Plans */
-            plans?: components["schemas"]["ProjectPlan"][];
+            plans?: components["schemas"]["ProjectBrief"][];
             /**
              * Session Id
              * Format: uuid
@@ -541,6 +541,28 @@ export interface components {
              * @enum {string}
              */
             source: "generated" | "fallback" | "mixed";
+        };
+        /** ProjectPlan */
+        ProjectPlan: {
+            /** Deliverable */
+            deliverable: string;
+            /** Id */
+            id: string;
+            /** Runnable Project Id */
+            runnable_project_id?: string | null;
+            /** Skill Ids */
+            skill_ids: string[];
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "graded" | "template" | "ai_suggested";
+            /** Steps */
+            steps: string[];
+            /** Title */
+            title: string;
+            /** Why */
+            why: string;
         };
         /** ProjectRecommendationResponse */
         ProjectRecommendationResponse: {
@@ -612,6 +634,8 @@ export interface components {
             job_quote: string;
             /** Label */
             label: string;
+            /** Project Plans */
+            project_plans?: components["schemas"]["ProjectPlan"][];
             requirement_type: components["schemas"]["RequirementType"];
             /** Resume Evidence */
             resume_evidence?: components["schemas"]["ResumeEvidence"][];
@@ -971,7 +995,7 @@ export interface operations {
             };
         };
     };
-    project_plans_api_project_plans_get: {
+    project_briefs_api_project_briefs_get: {
         parameters: {
             query: {
                 session_id: string;
@@ -989,7 +1013,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProjectPlansResponse"];
+                    "application/json": components["schemas"]["ProjectBriefsResponse"];
                 };
             };
             /** @description Validation Error */
@@ -1003,7 +1027,7 @@ export interface operations {
             };
         };
     };
-    generate_project_plans_api_project_plans_generate_post: {
+    generate_project_briefs_api_project_briefs_generate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -1012,7 +1036,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GeneratePlansRequest"];
+                "application/json": components["schemas"]["GenerateProjectBriefsRequest"];
             };
         };
         responses: {
@@ -1022,7 +1046,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProjectPlansResponse"];
+                    "application/json": components["schemas"]["ProjectBriefsResponse"];
                 };
             };
             /** @description Validation Error */

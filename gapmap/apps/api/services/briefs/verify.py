@@ -8,9 +8,9 @@ stored requirement, so quotes and skills cannot be invented.
 
 import re
 
-from gapmap.apps.api.contracts import PlanMilestone, ProjectPlan, Requirement
+from gapmap.apps.api.contracts import BriefMilestone, ProjectBrief, Requirement
 from gapmap.apps.api.services.analysis.evidence import normalize_whitespace
-from gapmap.apps.api.services.briefs.schema import PlanDraft
+from gapmap.apps.api.services.briefs.schema import BriefDraft
 
 
 _WORD = re.compile(r"[A-Za-z0-9]+")
@@ -51,7 +51,7 @@ def is_generic_title(title: str, label: str) -> bool:
     return not (set(tokens) - _GENERIC_TITLE_TOKENS)
 
 
-def _plan_text(draft: PlanDraft) -> str:
+def _plan_text(draft: BriefDraft) -> str:
     parts = [
         draft.title, draft.summary, draft.scenario,
         *draft.inputs, *draft.outputs, *draft.constraints, *draft.deliverables,
@@ -64,7 +64,7 @@ def _plan_text(draft: PlanDraft) -> str:
     return " ".join(parts)
 
 
-def verify_plan(draft: PlanDraft, requirement: Requirement) -> ProjectPlan | None:
+def verify_plan(draft: BriefDraft, requirement: Requirement) -> ProjectBrief | None:
     """Return a grounded plan, or None when the draft fails a deterministic check."""
     if draft.requirement_id != requirement.id:
         return None
@@ -79,7 +79,7 @@ def verify_plan(draft: PlanDraft, requirement: Requirement) -> ProjectPlan | Non
     # Only the existing graded project may mention grading; generated plans may not.
     if _AUTOMATIC_GRADING.search(_plan_text(draft)):
         return None
-    return ProjectPlan(
+    return ProjectBrief(
         id=f"plan-{requirement.id}",
         requirement_id=requirement.id,
         title=draft.title,
@@ -92,7 +92,7 @@ def verify_plan(draft: PlanDraft, requirement: Requirement) -> ProjectPlan | Non
         constraints=list(draft.constraints),
         deliverables=list(draft.deliverables),
         milestones=[
-            PlanMilestone(
+            BriefMilestone(
                 title=milestone.title,
                 work=list(milestone.work),
                 acceptance_criteria=list(milestone.acceptance_criteria),

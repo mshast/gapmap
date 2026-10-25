@@ -80,7 +80,7 @@ npm run dev --prefix apps/web
 
 Open <http://localhost:3000>. To use the API for analysis, set `NEXT_PUBLIC_GAPMAP_MOCK=false` in `apps/web/.env.local`; set `GAPMAP_API_URL` if the API is not at `http://127.0.0.1:8000`. With the API running, project run and submit execute and grade SQL on the server.
 
-The readiness page loads project briefs from `GET /api/project-plans` and offers one explicit `Generate tailored projects` action in live mode. Every brief is labeled `Tailored from this posting` or `Fallback project template`, and the project detail page renders the scenario, inputs, outputs, constraints, deliverables, and each milestone's work, acceptance checks, tests, and evidence. In fixture mode the page shows labeled fixture briefs, explains that the pasted posting was not analyzed, and hides the generate action.
+The readiness page loads project briefs from `GET /api/project-briefs` and offers one explicit `Generate tailored projects` action in live mode. Every brief is labeled `Tailored from this posting` or `Fallback project template`, and the project detail page renders the scenario, inputs, outputs, constraints, deliverables, and each milestone's work, acceptance checks, tests, and evidence. In fixture mode the page shows labeled fixture briefs, explains that the pasted posting was not analyzed, and hides the generate action.
 
 ## Enable live AI extraction
 
@@ -113,14 +113,22 @@ Both provider clients use the same strict JSON schema and Pydantic validation. O
 
 ## Project briefs
 
-`GET /api/project-plans?session_id=...&analysis_id=...` returns up to four briefs for the highest-priority gaps, in stored roadmap order. Each brief is grounded in the exact posting quote and the requirement's canonical skills, and includes a scenario, inputs, outputs, constraints, deliverables, and three to five milestones with work, acceptance criteria, tests, and evidence.
+`GET /api/project-briefs?session_id=...&analysis_id=...` returns up to four briefs for the highest-priority gaps, in stored roadmap order. Each brief is grounded in the exact posting quote and the requirement's canonical skills, and includes a scenario, inputs, outputs, constraints, deliverables, and three to five milestones with work, acceptance criteria, tests, and evidence.
 
 - SQL-mapped gaps always receive the existing graded `revenue-debug-001` brief; it remains the only automatically graded project. Generated briefs never claim grading.
-- `POST /api/project-plans/generate` makes one batched structured request for the non-SQL gaps and caches a complete result in the session. Revisiting a brief or reloading the readiness page makes no provider call.
+- `POST /api/project-briefs/generate` makes one batched structured request for the non-SQL gaps and caches a complete result in the session. Revisiting a brief or reloading the readiness page makes no provider call.
 - A `429`, provider failure, oversized bounded request, or invalid/ungrounded output returns the deterministic briefs with a warning and is not cached, so an explicit retry can try again. Invalid structured output is retried at most once; a `429` is never retried.
 - The prompt receives only the target role, requirement ids, labels, types, exact quotes, and canonical skills. Resume text, interview answers, and other session data are never sent.
 - Titles that only restate a technology, invented requirement ids, missing edge-case tests, and grading claims are rejected deterministically; the affected gap falls back to its deterministic brief.
 - Demo mode and a missing provider key never call a provider. Briefs never change readiness or competency evidence.
+
+## Mock interview
+
+The interview flow uses the stored analysis requirements, never the raw resume or posting. `POST /api/interview/start` returns five questions: two behavioral questions grounded in resume quotes, two technical questions grounded in posting quotes, and one gap probe for an unverified requirement. The server verifies every grounding quote and rejects invented requirements, unsupported quotes, and accusing gap probes.
+
+Answers are scored 1–4 on relevance, specificity, structure, impact, and accuracy (technical questions only). Every cited answer quote is checked against the submitted text. One follow-up is allowed per main question. `GET /api/interview/{interview_id}/summary` averages the criteria and returns practice suggestions. Feedback never changes readiness or competency evidence. Demo mode is explicitly labeled and uses deterministic templates and heuristics; live mode uses the configured Groq or OpenAI provider.
+
+The web app exposes this at `/interview`, linked from the main navigation and the readiness page.
 
 ## Implemented routes
 
@@ -130,8 +138,11 @@ Both provider clients use the same strict JSON schema and Pydantic validation. O
 - `POST /api/analyze/pdf` with multipart fields `resume_file` and `job_description`
 - `GET /api/projects/recommended?analysis_id=...`
 - `GET /api/readiness?session_id=...`
-- `GET /api/project-plans?session_id=...&analysis_id=...`: cached or deterministic briefs; never calls a provider
-- `POST /api/project-plans/generate` with JSON `{session_id, analysis_id}`: at most one batched provider request per analysis
+- `GET /api/project-briefs?session_id=...&analysis_id=...`: cached or deterministic briefs; never calls a provider
+- `POST /api/project-briefs/generate` with JSON `{session_id, analysis_id}`: at most one batched provider request per analysis
+- `POST /api/interview/start` with JSON `{session_id, analysis_id}`
+- `POST /api/interview/{interview_id}/answer` with JSON `{question_id, answer_text}`
+- `GET /api/interview/{interview_id}/summary`
 - `GET /api/projects/{project_id}`
 - `POST /api/projects/{project_id}/run` with JSON `{session_id, task_id, sql}`: read-only preview on the public fixture, capped at 20 rows
 - `POST /api/projects/{project_id}/submit` with the same body: graded on hidden fixtures; the latest attempt per task is recorded for readiness

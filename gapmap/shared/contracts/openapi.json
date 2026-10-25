@@ -244,6 +244,65 @@
         "title": "Body_analyze_pdf_api_analyze_pdf_post",
         "type": "object"
       },
+      "BriefMilestone": {
+        "additionalProperties": false,
+        "properties": {
+          "acceptance_criteria": {
+            "items": {
+              "maxLength": 240,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 4,
+            "minItems": 2,
+            "title": "Acceptance Criteria",
+            "type": "array"
+          },
+          "evidence": {
+            "maxLength": 240,
+            "minLength": 1,
+            "title": "Evidence",
+            "type": "string"
+          },
+          "tests": {
+            "items": {
+              "maxLength": 240,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 4,
+            "minItems": 2,
+            "title": "Tests",
+            "type": "array"
+          },
+          "title": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          },
+          "work": {
+            "items": {
+              "maxLength": 240,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 3,
+            "minItems": 2,
+            "title": "Work",
+            "type": "array"
+          }
+        },
+        "required": [
+          "title",
+          "work",
+          "acceptance_criteria",
+          "tests",
+          "evidence"
+        ],
+        "title": "BriefMilestone",
+        "type": "object"
+      },
       "CompetencyEvidence": {
         "additionalProperties": false,
         "properties": {
@@ -432,7 +491,7 @@
         "title": "EvidenceStatus",
         "type": "string"
       },
-      "GeneratePlansRequest": {
+      "GenerateProjectBriefsRequest": {
         "additionalProperties": false,
         "properties": {
           "analysis_id": {
@@ -450,7 +509,7 @@
           "session_id",
           "analysis_id"
         ],
-        "title": "GeneratePlansRequest",
+        "title": "GenerateProjectBriefsRequest",
         "type": "object"
       },
       "HTTPValidationError": {
@@ -595,66 +654,7 @@
         "title": "InterviewSummary",
         "type": "object"
       },
-      "PlanMilestone": {
-        "additionalProperties": false,
-        "properties": {
-          "acceptance_criteria": {
-            "items": {
-              "maxLength": 240,
-              "minLength": 1,
-              "type": "string"
-            },
-            "maxItems": 4,
-            "minItems": 2,
-            "title": "Acceptance Criteria",
-            "type": "array"
-          },
-          "evidence": {
-            "maxLength": 240,
-            "minLength": 1,
-            "title": "Evidence",
-            "type": "string"
-          },
-          "tests": {
-            "items": {
-              "maxLength": 240,
-              "minLength": 1,
-              "type": "string"
-            },
-            "maxItems": 4,
-            "minItems": 2,
-            "title": "Tests",
-            "type": "array"
-          },
-          "title": {
-            "maxLength": 120,
-            "minLength": 1,
-            "title": "Title",
-            "type": "string"
-          },
-          "work": {
-            "items": {
-              "maxLength": 240,
-              "minLength": 1,
-              "type": "string"
-            },
-            "maxItems": 3,
-            "minItems": 2,
-            "title": "Work",
-            "type": "array"
-          }
-        },
-        "required": [
-          "title",
-          "work",
-          "acceptance_criteria",
-          "tests",
-          "evidence"
-        ],
-        "title": "PlanMilestone",
-        "type": "object"
-      },
-      "ProjectPlan": {
+      "ProjectBrief": {
         "additionalProperties": false,
         "properties": {
           "constraints": {
@@ -702,7 +702,7 @@
           },
           "milestones": {
             "items": {
-              "$ref": "#/components/schemas/PlanMilestone"
+              "$ref": "#/components/schemas/BriefMilestone"
             },
             "maxItems": 5,
             "minItems": 3,
@@ -790,10 +790,10 @@
           "milestones",
           "source"
         ],
-        "title": "ProjectPlan",
+        "title": "ProjectBrief",
         "type": "object"
       },
-      "ProjectPlansResponse": {
+      "ProjectBriefsResponse": {
         "additionalProperties": false,
         "properties": {
           "analysis_id": {
@@ -807,7 +807,7 @@
           },
           "plans": {
             "items": {
-              "$ref": "#/components/schemas/ProjectPlan"
+              "$ref": "#/components/schemas/ProjectBrief"
             },
             "maxItems": 4,
             "title": "Plans",
@@ -834,7 +834,79 @@
           "source",
           "message"
         ],
-        "title": "ProjectPlansResponse",
+        "title": "ProjectBriefsResponse",
+        "type": "object"
+      },
+      "ProjectPlan": {
+        "additionalProperties": false,
+        "properties": {
+          "deliverable": {
+            "title": "Deliverable",
+            "type": "string"
+          },
+          "id": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Id",
+            "type": "string"
+          },
+          "runnable_project_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Runnable Project Id"
+          },
+          "skill_ids": {
+            "items": {
+              "maxLength": 100,
+              "minLength": 1,
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Skill Ids",
+            "type": "array"
+          },
+          "source": {
+            "enum": [
+              "graded",
+              "template",
+              "ai_suggested"
+            ],
+            "title": "Source",
+            "type": "string"
+          },
+          "steps": {
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Steps",
+            "type": "array"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "why": {
+            "title": "Why",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "skill_ids",
+          "why",
+          "deliverable",
+          "steps",
+          "source"
+        ],
+        "title": "ProjectPlan",
         "type": "object"
       },
       "ProjectRecommendationResponse": {
@@ -1043,6 +1115,13 @@
           "label": {
             "title": "Label",
             "type": "string"
+          },
+          "project_plans": {
+            "items": {
+              "$ref": "#/components/schemas/ProjectPlan"
+            },
+            "title": "Project Plans",
+            "type": "array"
           },
           "requirement_type": {
             "$ref": "#/components/schemas/RequirementType"
@@ -1687,9 +1766,9 @@
         "summary": "Interview Summary"
       }
     },
-    "/api/project-plans": {
+    "/api/project-briefs": {
       "get": {
-        "operationId": "project_plans_api_project_plans_get",
+        "operationId": "project_briefs_api_project_briefs_get",
         "parameters": [
           {
             "in": "query",
@@ -1717,7 +1796,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ProjectPlansResponse"
+                  "$ref": "#/components/schemas/ProjectBriefsResponse"
                 }
               }
             },
@@ -1734,17 +1813,17 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Project Plans"
+        "summary": "Project Briefs"
       }
     },
-    "/api/project-plans/generate": {
+    "/api/project-briefs/generate": {
       "post": {
-        "operationId": "generate_project_plans_api_project_plans_generate_post",
+        "operationId": "generate_project_briefs_api_project_briefs_generate_post",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/GeneratePlansRequest"
+                "$ref": "#/components/schemas/GenerateProjectBriefsRequest"
               }
             }
           },
@@ -1755,7 +1834,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ProjectPlansResponse"
+                  "$ref": "#/components/schemas/ProjectBriefsResponse"
                 }
               }
             },
@@ -1772,7 +1851,7 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Generate Project Plans"
+        "summary": "Generate Project Briefs"
       }
     },
     "/api/projects/recommended": {

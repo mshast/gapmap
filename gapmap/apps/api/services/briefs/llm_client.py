@@ -15,7 +15,7 @@ from pydantic import ValidationError
 
 from gapmap.apps.api.contracts import Requirement
 from gapmap.apps.api.services.briefs.prompts import plan_messages
-from gapmap.apps.api.services.briefs.schema import PlanDraft, PlanSetDraft
+from gapmap.apps.api.services.briefs.schema import BriefDraft, BriefSetDraft
 
 
 logger = logging.getLogger(__name__)
@@ -48,7 +48,7 @@ class _InvalidOutput(Exception):
 class BriefClient(Protocol):
     async def generate(
         self, target_role: str, requirements: list[Requirement]
-    ) -> list[PlanDraft]: ...
+    ) -> list[BriefDraft]: ...
 
 
 class LLMBriefClient:
@@ -69,7 +69,7 @@ class LLMBriefClient:
 
     async def generate(
         self, target_role: str, requirements: list[Requirement]
-    ) -> list[PlanDraft]:
+    ) -> list[BriefDraft]:
         if not self._api_key.strip():
             raise BriefGenerationError(
                 f"No server-side project key configured. Set {self._key_name}."
@@ -85,7 +85,7 @@ class LLMBriefClient:
                 "json_schema": {
                     "name": "project_briefs",
                     "strict": True,
-                    "schema": PlanSetDraft.model_json_schema(),
+                    "schema": BriefSetDraft.model_json_schema(),
                 },
             },
             "max_completion_tokens": MAX_COMPLETION_TOKENS,
@@ -108,7 +108,7 @@ class LLMBriefClient:
                 raise BriefGenerationError("The project writer failed.") from None
         raise BriefGenerationError("The project writer returned invalid output twice.")
 
-    async def _attempt(self, payload: dict[str, object]) -> list[PlanDraft]:
+    async def _attempt(self, payload: dict[str, object]) -> list[BriefDraft]:
         # The endpoint is fixed server-side; posting text cannot change it.
         async with httpx.AsyncClient(
             timeout=httpx.Timeout(60.0, connect=10.0),
@@ -133,7 +133,7 @@ class LLMBriefClient:
             content = message["content"]
             if not isinstance(content, str):
                 raise _InvalidOutput
-            return PlanSetDraft.model_validate_json(content).plans
+            return BriefSetDraft.model_validate_json(content).plans
         except (ValueError, KeyError, IndexError, TypeError, ValidationError):
             # Provider bodies may echo the posting. Never expose them.
             raise _InvalidOutput from None
@@ -141,7 +141,7 @@ class LLMBriefClient:
     @staticmethod
     def _fits(messages: list[dict[str, str]]) -> bool:
         prompt_tokens = sum(len(message["content"]) for message in messages) // 4
-        schema_tokens = len(json.dumps(PlanSetDraft.model_json_schema())) // 4
+        schema_tokens = len(json.dumps(BriefSetDraft.model_json_schema())) // 4
         return prompt_tokens + schema_tokens + MAX_COMPLETION_TOKENS <= MAX_REQUEST_TOKENS
 
 

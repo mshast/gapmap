@@ -12,8 +12,8 @@ from typing import Awaitable, Callable
 from uuid import UUID
 
 from gapmap.apps.api.contracts import (
-    ProjectPlan,
-    ProjectPlansResponse,
+    ProjectBrief,
+    ProjectBriefsResponse,
     Requirement,
 )
 from gapmap.apps.api.services.briefs.fallback import fallback_plan
@@ -70,14 +70,14 @@ class _SingleFlight:
     """Run one generation task per (loop, session, analysis) pair."""
 
     def __init__(self) -> None:
-        self._tasks: dict[tuple[int, UUID, UUID], asyncio.Task[ProjectPlansResponse]] = {}
+        self._tasks: dict[tuple[int, UUID, UUID], asyncio.Task[ProjectBriefsResponse]] = {}
         self._lock = threading.Lock()
 
     async def run(
         self,
         key: tuple[UUID, UUID],
-        factory: Callable[[], Awaitable[ProjectPlansResponse]],
-    ) -> ProjectPlansResponse:
+        factory: Callable[[], Awaitable[ProjectBriefsResponse]],
+    ) -> ProjectBriefsResponse:
         loop = asyncio.get_running_loop()
         full_key = (id(loop), key[0], key[1])
         with self._lock:
@@ -94,7 +94,7 @@ class _SingleFlight:
                     self._tasks.pop(full_key, None)
 
 
-class ProjectPlanService:
+class ProjectBriefService:
     def __init__(
         self,
         store: InMemorySessionStore,
@@ -107,10 +107,10 @@ class ProjectPlanService:
         self._flight = flight or _SingleFlight()
 
     @classmethod
-    def from_env(cls, store: InMemorySessionStore) -> "ProjectPlanService":
+    def from_env(cls, store: InMemorySessionStore) -> "ProjectBriefService":
         return cls(store, client_from_env())
 
-    async def for_analysis(self, session_id: UUID, analysis_id: UUID) -> ProjectPlansResponse:
+    async def for_analysis(self, session_id: UUID, analysis_id: UUID) -> ProjectBriefsResponse:
         """Cached briefs when present, otherwise deterministic fallbacks. No provider call."""
         context = self._context(session_id, analysis_id)
         cached = self._store.load_plans(session_id, analysis_id)
@@ -125,7 +125,7 @@ class ProjectPlanService:
             FALLBACK_MESSAGE,
         )
 
-    async def generate(self, session_id: UUID, analysis_id: UUID) -> ProjectPlansResponse:
+    async def generate(self, session_id: UUID, analysis_id: UUID) -> ProjectBriefsResponse:
         """One batched generation per analysis; cached results are reused."""
         context = self._context(session_id, analysis_id)
         cached = self._store.load_plans(session_id, analysis_id)
@@ -142,7 +142,7 @@ class ProjectPlanService:
             self._store.store_plans(session_id, analysis_id, response)
         return response
 
-    async def _generate(self, context: _Context) -> ProjectPlansResponse:
+    async def _generate(self, context: _Context) -> ProjectBriefsResponse:
         # A simultaneous request may have finished while this one queued.
         cached = self._store.load_plans(context.session_id, context.analysis_id)
         if cached is not None:
@@ -169,7 +169,7 @@ class ProjectPlanService:
             # First plan per requirement wins; duplicates are ignored.
             by_requirement.setdefault(draft.requirement_id, draft)
 
-        plans: list[ProjectPlan] = []
+        plans: list[ProjectBrief] = []
         for gap in context.gaps:
             if family_for(gap) == "sql":
                 plans.append(fallback_plan(gap))
@@ -208,8 +208,8 @@ class ProjectPlanService:
         )
 
     @staticmethod
-    def _empty(context: _Context) -> ProjectPlansResponse:
-        return ProjectPlansResponse(
+    def _empty(context: _Context) -> ProjectBriefsResponse:
+        return ProjectBriefsResponse(
             session_id=context.session_id,
             analysis_id=context.analysis_id,
             plans=[],
@@ -220,11 +220,11 @@ class ProjectPlanService:
     @staticmethod
     def _response(
         context: _Context,
-        plans: list[ProjectPlan],
+        plans: list[ProjectBrief],
         source: str,
         message: str,
-    ) -> ProjectPlansResponse:
-        return ProjectPlansResponse(
+    ) -> ProjectBriefsResponse:
+        return ProjectBriefsResponse(
             session_id=context.session_id,
             analysis_id=context.analysis_id,
             plans=plans,

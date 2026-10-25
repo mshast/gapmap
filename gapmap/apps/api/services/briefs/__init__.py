@@ -1,5 +1,5 @@
 """Posting-grounded project briefs with a deterministic fallback layer."""
 
-from gapmap.apps.api.services.briefs.service import ProjectPlanService
+from gapmap.apps.api.services.briefs.service import ProjectBriefService
 
-__all__ = ["ProjectPlanService"]
+__all__ = ["ProjectBriefService"]

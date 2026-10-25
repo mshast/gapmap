@@ -52,6 +52,19 @@ class ResumeEvidence(StrictModel):
     strength: Literal["contextual", "keyword_only"]
 
 
+class ProjectPlan(StrictModel):
+    id: Identifier
+    title: str
+    skill_ids: list[Identifier] = Field(min_length=1)
+    why: str
+    deliverable: str
+    steps: list[str] = Field(min_length=1)
+    # graded: runnable, tested project. template: reviewed plan for a known
+    # skill. ai_suggested: an idea from the model, labeled as such in the UI.
+    source: Literal["graded", "template", "ai_suggested"]
+    runnable_project_id: str | None = None
+
+
 class Requirement(StrictModel):
     id: Identifier
     label: str
@@ -64,6 +77,7 @@ class Requirement(StrictModel):
     evidence_status: EvidenceStatus
     verification_capability: VerificationCapability
     uncovered_skill_ids: list[Identifier] = Field(default_factory=list)
+    project_plans: list[ProjectPlan] = Field(default_factory=list)
 
 
 class RoadmapItem(StrictModel):
@@ -108,47 +122,47 @@ class ProjectResponse(StrictModel):
     competencies: list[Identifier]
 
 
-PlanSource = Literal["generated", "fallback"]
-PlanTitle = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=120)]
-PlanText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=240)]
-PlanProse = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=700)]
+BriefSource = Literal["generated", "fallback"]
+BriefTitle = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=120)]
+BriefText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=240)]
+BriefProse = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=700)]
 
 
-class PlanMilestone(StrictModel):
-    title: PlanTitle
-    work: list[PlanText] = Field(min_length=2, max_length=3)
-    acceptance_criteria: list[PlanText] = Field(min_length=2, max_length=4)
-    tests: list[PlanText] = Field(min_length=2, max_length=4)
-    evidence: PlanText
+class BriefMilestone(StrictModel):
+    title: BriefTitle
+    work: list[BriefText] = Field(min_length=2, max_length=3)
+    acceptance_criteria: list[BriefText] = Field(min_length=2, max_length=4)
+    tests: list[BriefText] = Field(min_length=2, max_length=4)
+    evidence: BriefText
 
 
-class ProjectPlan(StrictModel):
+class ProjectBrief(StrictModel):
     id: Identifier
     requirement_id: Identifier
-    title: PlanTitle
-    summary: PlanProse
+    title: BriefTitle
+    summary: BriefProse
     job_quote: str
     skills: list[Identifier] = Field(min_length=1, max_length=8)
-    scenario: PlanProse
-    inputs: list[PlanText] = Field(min_length=1, max_length=6)
-    outputs: list[PlanText] = Field(min_length=1, max_length=6)
-    constraints: list[PlanText] = Field(min_length=1, max_length=6)
-    deliverables: list[PlanText] = Field(min_length=1, max_length=6)
-    milestones: list[PlanMilestone] = Field(min_length=3, max_length=5)
-    source: PlanSource
+    scenario: BriefProse
+    inputs: list[BriefText] = Field(min_length=1, max_length=6)
+    outputs: list[BriefText] = Field(min_length=1, max_length=6)
+    constraints: list[BriefText] = Field(min_length=1, max_length=6)
+    deliverables: list[BriefText] = Field(min_length=1, max_length=6)
+    milestones: list[BriefMilestone] = Field(min_length=3, max_length=5)
+    source: BriefSource
     # Only the existing graded SQL project may set this.
     runnable_project_id: str | None = None
 
 
-class GeneratePlansRequest(StrictModel):
+class GenerateProjectBriefsRequest(StrictModel):
     session_id: UUID
     analysis_id: UUID
 
 
-class ProjectPlansResponse(StrictModel):
+class ProjectBriefsResponse(StrictModel):
     session_id: UUID
     analysis_id: UUID
-    plans: list[ProjectPlan] = Field(default_factory=list, max_length=4)
+    plans: list[ProjectBrief] = Field(default_factory=list, max_length=4)
     source: Literal["generated", "fallback", "mixed"]
     message: str
 

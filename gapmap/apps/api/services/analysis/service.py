@@ -9,11 +9,13 @@ from pydantic import ValidationError
 from gapmap.apps.api.contracts import AnalyzeRequest, Requirement, VerificationCapability
 from gapmap.apps.api.fixtures.loader import load_demo_fixture
 from gapmap.apps.api.services.analysis.evidence import (
-    initial_status, match_resume_evidence, normalize_whitespace, skills_in_text, verified_excerpt,
+    clean_label, initial_status, match_resume_evidence, normalize_whitespace, requirement_skills,
+    skills_in_text, verified_excerpt,
 )
 from gapmap.apps.api.services.analysis.llm_client import ExtractionError, Extractor, StructuredLLMClient
 from gapmap.apps.api.services.analysis.ollama_client import OllamaStructuredClient
 from gapmap.apps.api.services.analysis.matcher import apply_coverage, build_roadmap, select_project
+from gapmap.apps.api.services.analysis.plans import plans_for
 from gapmap.apps.api.services.analysis.schema import AnalysisResult, ExtractionResult
 from gapmap.apps.api.services.interfaces import AnalysisUnavailableError
 
@@ -89,6 +91,7 @@ class StructuredAnalysisService:
             normalized_job.find(normalize_whitespace(item.job_quote))
         ))
         ids: dict[str, int] = {}
+        ideas = {}
         dropped_quotes = False
         for item in ordered:
             job_quote = verified_excerpt(item.job_quote, job_text)
@@ -98,25 +101,26 @@ class StructuredAnalysisService:
             seen.add(normalize_whitespace(job_quote))
             # Reconcile model tags against the actual excerpt. This also preserves
             # uncovered skills in mixed SQL/React requirements.
-            skill_ids = skills_in_text(job_quote) or ["other"]
-            if "other" in item.skill_ids and "other" not in skill_ids:
+            skill_ids = requirement_skills(job_quote)
+            if "other" in item.skill_ids and skill_ids != ["eligibility"] and "other" not in skill_ids:
                 skill_ids.append("other")
             evidence = match_resume_evidence(item.resume_quotes, resume_text, skill_ids, job_quote)
             if len(evidence) < len(item.resume_quotes):
                 dropped_quotes = True
             base = "sql" if skill_ids[0].startswith("sql_") else skill_ids[0]
-            if base == "other":
-                base = "other-" + str(len(requirements) + 1)
+            if base in {"other", "eligibility"}:
+                base = f"{base}-{len(requirements) + 1}"
             ids[base] = ids.get(base, 0) + 1
             suffix = f"-{ids[base]}" if ids[base] > 1 else ""
             requirements.append(Requirement(
-                id=f"req-{base}{suffix}", label=item.label, job_quote=job_quote,
+                id=f"req-{base}{suffix}", label=clean_label(item.label), job_quote=job_quote,
                 importance=item.importance, requirement_type=item.requirement_type,
                 skill_ids=skill_ids,
                 resume_quotes=[claim.quote for claim in evidence if claim.strength == "contextual"],
                 resume_evidence=evidence, evidence_status=initial_status(evidence),
                 verification_capability=VerificationCapability.NOT_ASSESSABLE,
             ))
+            ideas[requirements[-1].id] = item.project_idea
 
         if len(requirements) < 5:
             raise AnalysisUnavailableError(
@@ -128,6 +132,7 @@ class StructuredAnalysisService:
         project = select_project(requirements)
         for requirement in requirements:
             apply_coverage(requirement, project)
+            requirement.project_plans = plans_for(requirement, project, ideas[requirement.id])
         target_role = verified_excerpt(extracted.target_role, job_text) or "Software Engineering Intern"
         return AnalysisResult(
             target_role=target_role, requirements=requirements,

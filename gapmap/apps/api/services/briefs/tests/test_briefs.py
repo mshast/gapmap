@@ -20,9 +20,9 @@ from gapmap.apps.api.services.briefs.llm_client import (
     LLMBriefClient,
 )
 from gapmap.apps.api.services.briefs.prompts import plan_messages
-from gapmap.apps.api.services.briefs.schema import MilestoneDraft, PlanDraft
+from gapmap.apps.api.services.briefs.schema import MilestoneDraft, BriefDraft
 from gapmap.apps.api.services.briefs.selection import select_gaps
-from gapmap.apps.api.services.briefs.service import ProjectPlanService
+from gapmap.apps.api.services.briefs.service import ProjectBriefService
 from gapmap.apps.api.services.demo_analysis import DemoAnalysisService
 from gapmap.apps.api.session_store import InMemorySessionStore
 
@@ -68,8 +68,8 @@ def draft(
     requirement_id: str = "req-python",
     title: str = "Ledger Reconciliation Desk",
     tests: list[str] | None = None,
-) -> PlanDraft:
-    return PlanDraft(
+) -> BriefDraft:
+    return BriefDraft(
         requirement_id=requirement_id,
         title=title,
         summary="A small tool that reconciles two exports and reports every mismatch to one analyst.",
@@ -104,11 +104,11 @@ class FakeClient:
 
 def make_api(client: FakeClient | None):
     store = InMemorySessionStore()
-    service = ProjectPlanService(store, client)
+    service = ProjectBriefService(store, client)
     app = create_app(
         analysis_service=DemoAnalysisService(),
         session_store=store,
-        project_plan_service=service,
+        project_brief_service=service,
     )
     return app, store
 
@@ -129,7 +129,7 @@ def test_fallback_plans_need_no_provider() -> None:
     app, _ = make_api(fake)
     with TestClient(app) as client:
         analysis = analyzed(client)
-        response = client.get("/api/project-plans", params=plans_url(analysis))
+        response = client.get("/api/project-briefs", params=plans_url(analysis))
     assert response.status_code == 200
     body = response.json()
     assert body["source"] == "fallback"
@@ -145,7 +145,7 @@ def test_every_fallback_has_the_full_brief_shape() -> None:
     app, _ = make_api(None)
     with TestClient(app) as client:
         analysis = analyzed(client)
-        body = client.get("/api/project-plans", params=plans_url(analysis)).json()
+        body = client.get("/api/project-briefs", params=plans_url(analysis)).json()
     for plan in body["plans"]:
         assert plan["summary"] and plan["scenario"]
         assert plan["inputs"] and plan["outputs"] and plan["constraints"]
@@ -163,9 +163,9 @@ def test_generate_once_then_serve_from_cache() -> None:
     app, _ = make_api(fake)
     with TestClient(app) as client:
         analysis = analyzed(client)
-        first = client.post("/api/project-plans/generate", json=plans_url(analysis)).json()
-        second = client.post("/api/project-plans/generate", json=plans_url(analysis)).json()
-        read = client.get("/api/project-plans", params=plans_url(analysis)).json()
+        first = client.post("/api/project-briefs/generate", json=plans_url(analysis)).json()
+        second = client.post("/api/project-briefs/generate", json=plans_url(analysis)).json()
+        read = client.get("/api/project-briefs", params=plans_url(analysis)).json()
     assert fake.calls == 1
     assert fake.roles == ["Software Engineering Intern"]
     assert first["source"] == "generated"
@@ -191,7 +191,7 @@ def test_simultaneous_requests_share_one_provider_call() -> None:
             return list(
                 await asyncio.gather(
                     *[
-                        client.post("/api/project-plans/generate", json=payload)
+                        client.post("/api/project-briefs/generate", json=payload)
                         for _ in range(3)
                     ]
                 )
@@ -210,10 +210,10 @@ def test_mismatched_analysis_is_not_found() -> None:
         first = analyzed(client)
         second = analyzed(client)
         params = {"session_id": first["session_id"], "analysis_id": second["analysis_id"]}
-        assert client.get("/api/project-plans", params=params).status_code == 404
-        assert client.post("/api/project-plans/generate", json=params).status_code == 404
+        assert client.get("/api/project-briefs", params=params).status_code == 404
+        assert client.post("/api/project-briefs/generate", json=params).status_code == 404
         unknown = {"session_id": str(uuid4()), "analysis_id": first["analysis_id"]}
-        assert client.get("/api/project-plans", params=unknown).status_code == 404
+        assert client.get("/api/project-briefs", params=unknown).status_code == 404
     assert fake.calls == 0
 
 
@@ -246,7 +246,7 @@ def test_invented_requirement_id_is_discarded() -> None:
     app, _ = make_api(fake)
     with TestClient(app) as client:
         analysis = analyzed(client)
-        body = client.post("/api/project-plans/generate", json=plans_url(analysis)).json()
+        body = client.post("/api/project-briefs/generate", json=plans_url(analysis)).json()
     assert body["source"] == "fallback"
     assert all(plan["source"] == "fallback" for plan in body["plans"])
     assert fake.calls == 1
@@ -263,7 +263,7 @@ def test_technology_only_title_falls_back() -> None:
     app, _ = make_api(fake)
     with TestClient(app) as client:
         analysis = analyzed(client)
-        body = client.post("/api/project-plans/generate", json=plans_url(analysis)).json()
+        body = client.post("/api/project-briefs/generate", json=plans_url(analysis)).json()
     assert all(plan["source"] == "fallback" for plan in body["plans"])
     assert body["source"] == "fallback"
 
@@ -273,7 +273,7 @@ def test_grading_claim_is_rejected() -> None:
     app, _ = make_api(fake)
     with TestClient(app) as client:
         analysis = analyzed(client)
-        body = client.post("/api/project-plans/generate", json=plans_url(analysis)).json()
+        body = client.post("/api/project-briefs/generate", json=plans_url(analysis)).json()
     assert all(plan["source"] == "fallback" for plan in body["plans"])
 
 
@@ -282,7 +282,7 @@ def test_rate_limit_is_not_retried_and_falls_back() -> None:
     app, _ = make_api(fake)
     with TestClient(app) as client:
         analysis = analyzed(client)
-        body = client.post("/api/project-plans/generate", json=plans_url(analysis)).json()
+        body = client.post("/api/project-briefs/generate", json=plans_url(analysis)).json()
     assert fake.calls == 1
     assert body["source"] == "fallback"
     assert "30 seconds" in body["message"]
@@ -294,7 +294,7 @@ def test_budget_overflow_skips_generation() -> None:
     app, _ = make_api(fake)
     with TestClient(app) as client:
         analysis = analyzed(client)
-        body = client.post("/api/project-plans/generate", json=plans_url(analysis)).json()
+        body = client.post("/api/project-briefs/generate", json=plans_url(analysis)).json()
     assert body["source"] == "fallback"
     assert "too large" in body["message"]
 
@@ -350,7 +350,7 @@ def test_plans_do_not_change_readiness() -> None:
         before = client.get(
             "/api/readiness", params={"session_id": analysis["session_id"]}
         ).json()
-        client.post("/api/project-plans/generate", json=plans_url(analysis))
+        client.post("/api/project-briefs/generate", json=plans_url(analysis))
         after = client.get(
             "/api/readiness", params={"session_id": analysis["session_id"]}
         ).json()
@@ -382,19 +382,19 @@ def test_no_eligible_gaps_returns_empty_without_a_call() -> None:
         )
     )
     fake = FakeClient()
-    service = ProjectPlanService(store, fake)
+    service = ProjectBriefService(store, fake)
     app = create_app(
         analysis_service=DemoAnalysisService(),
         session_store=store,
-        project_plan_service=service,
+        project_brief_service=service,
     )
     params = {
         "session_id": str(analysis.session_id),
         "analysis_id": str(analysis.analysis_id),
     }
     with TestClient(app) as client:
-        read = client.get("/api/project-plans", params=params).json()
-        generated = client.post("/api/project-plans/generate", json=params).json()
+        read = client.get("/api/project-briefs", params=params).json()
+        generated = client.post("/api/project-briefs/generate", json=params).json()
     assert read["plans"] == []
     assert generated["plans"] == []
     assert read["source"] == "fallback"
@@ -406,7 +406,7 @@ def test_generated_plans_reuse_stored_quotes_and_skills() -> None:
     app, _ = make_api(fake)
     with TestClient(app) as client:
         analysis = analyzed(client)
-        body = client.post("/api/project-plans/generate", json=plans_url(analysis)).json()
+        body = client.post("/api/project-briefs/generate", json=plans_url(analysis)).json()
     stored = {item["id"]: item for item in analysis["requirements"]}
     for plan in body["plans"]:
         source = stored[plan["requirement_id"]]

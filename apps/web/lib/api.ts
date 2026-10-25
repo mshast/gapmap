@@ -1,7 +1,10 @@
 import type {
   Analysis,
+  InterviewFeedback,
+  InterviewStart,
+  InterviewSummary,
   Project,
-  ProjectPlans,
+  ProjectBriefs,
   Readiness,
   RunResult,
   Submission,
@@ -301,24 +304,49 @@ export async function getReadiness(sessionId: string): Promise<Readiness> {
   return request(`/api/readiness?session_id=${encodeURIComponent(sessionId)}`);
 }
 
-export async function getProjectPlans(
+export async function getProjectBriefs(
   sessionId: string,
   analysisId: string,
-): Promise<ProjectPlans> {
+): Promise<ProjectBriefs> {
   if (isMockMode) return fixturePlans(sessionId, analysisId);
   return request(
-    `/api/project-plans?session_id=${encodeURIComponent(sessionId)}&analysis_id=${encodeURIComponent(analysisId)}`,
+    `/api/project-briefs?session_id=${encodeURIComponent(sessionId)}&analysis_id=${encodeURIComponent(analysisId)}`,
   );
 }
 
-export async function generateProjectPlans(
+export async function generateProjectBriefs(
   sessionId: string,
   analysisId: string,
-): Promise<ProjectPlans> {
+): Promise<ProjectBriefs> {
   if (isMockMode) return fixturePlans(sessionId, analysisId);
-  return request("/api/project-plans/generate", {
+  return request("/api/project-briefs/generate", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ session_id: sessionId, analysis_id: analysisId }),
   });
+}
+
+const interviewNeedsApi = "Interview practice needs the GapMap API. Start it (GAPMAP_DEMO_MODE=1 for the offline demo) and run the web app with NEXT_PUBLIC_GAPMAP_MOCK=false.";
+
+export async function startInterview(sessionId: string, analysisId: string): Promise<InterviewStart> {
+  if (isMockMode) throw new Error(interviewNeedsApi);
+  return request("/api/interview/start", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ session_id: sessionId, analysis_id: analysisId }),
+  });
+}
+
+export async function answerInterview(interviewId: string, questionId: string, answerText: string): Promise<InterviewFeedback> {
+  if (isMockMode) throw new Error(interviewNeedsApi);
+  return request(`/api/interview/${encodeURIComponent(interviewId)}/answer`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ question_id: questionId, answer_text: answerText }),
+  });
+}
+
+export async function getInterviewSummary(interviewId: string): Promise<InterviewSummary> {
+  if (isMockMode) throw new Error(interviewNeedsApi);
+  return request(`/api/interview/${encodeURIComponent(interviewId)}/summary`);
 }

@@ -1,7 +1,7 @@
 """Project-brief endpoints.
 
-``GET /api/project-plans`` is provider-free: it returns cached briefs or the
-deterministic fallbacks. ``POST /api/project-plans/generate`` performs at most
+``GET /api/project-briefs`` is provider-free: it returns cached briefs or the
+deterministic fallbacks. ``POST /api/project-briefs/generate`` performs at most
 one batched provider request per analysis and caches the result.
 """
 
@@ -11,19 +11,19 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 
-from gapmap.apps.api.contracts import GeneratePlansRequest, ProjectPlansResponse
+from gapmap.apps.api.contracts import GenerateProjectBriefsRequest, ProjectBriefsResponse
 from gapmap.apps.api.services.briefs.service import (
     PlanNotFoundError,
-    ProjectPlanService,
+    ProjectBriefService,
 )
 
 
-router = APIRouter(prefix="/api/project-plans")
+router = APIRouter(prefix="/api/project-briefs")
 ResultT = TypeVar("ResultT")
 
 
-def get_project_plan_service(request: Request) -> ProjectPlanService:
-    service = getattr(request.app.state, "project_plan_service", None)
+def get_project_brief_service(request: Request) -> ProjectBriefService:
+    service = getattr(request.app.state, "project_brief_service", None)
     if service is None:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -32,7 +32,7 @@ def get_project_plan_service(request: Request) -> ProjectPlanService:
     return service
 
 
-PlanServiceDependency = Annotated[ProjectPlanService, Depends(get_project_plan_service)]
+PlanServiceDependency = Annotated[ProjectBriefService, Depends(get_project_brief_service)]
 
 
 async def _public_errors(call: Awaitable[ResultT]) -> ResultT:
@@ -44,18 +44,18 @@ async def _public_errors(call: Awaitable[ResultT]) -> ResultT:
         ) from None
 
 
-@router.get("", response_model=ProjectPlansResponse)
-async def project_plans(
+@router.get("", response_model=ProjectBriefsResponse)
+async def project_briefs(
     session_id: UUID,
     analysis_id: UUID,
     service: PlanServiceDependency,
-) -> ProjectPlansResponse:
+) -> ProjectBriefsResponse:
     return await _public_errors(service.for_analysis(session_id, analysis_id))
 
 
-@router.post("/generate", response_model=ProjectPlansResponse)
-async def generate_project_plans(
-    request: GeneratePlansRequest,
+@router.post("/generate", response_model=ProjectBriefsResponse)
+async def generate_project_briefs(
+    request: GenerateProjectBriefsRequest,
     service: PlanServiceDependency,
-) -> ProjectPlansResponse:
+) -> ProjectBriefsResponse:
     return await _public_errors(service.generate(request.session_id, request.analysis_id))

@@ -241,3 +241,28 @@ def test_router_without_service_reports_not_installed():
     app.include_router(router)
     with TestClient(app) as client:
         assert client.get(f"/api/interview/{UNKNOWN}/summary").status_code == 501
+
+
+def test_default_app_mounts_interview_routes(monkeypatch):
+    monkeypatch.setenv("GAPMAP_DEMO_MODE", "1")
+    from gapmap.apps.api.main import create_app
+
+    with TestClient(create_app()) as client:
+        documents = client.get("/api/demo/fixture").json()
+        analysis = client.post("/api/analyze", json={
+            "resume_text": documents["resume_text"], "job_description": documents["job_description"],
+        }).json()
+        response = client.post("/api/interview/start", json={
+            "session_id": analysis["session_id"], "analysis_id": analysis["analysis_id"],
+        })
+    assert response.status_code == 200
+    assert response.json()["mode"] == "demo"
+
+
+def test_groq_provider_uses_the_groq_endpoint(monkeypatch):
+    monkeypatch.delenv("GAPMAP_DEMO_MODE", raising=False)
+    monkeypatch.setenv("GAPMAP_LLM_PROVIDER", "groq")
+    monkeypatch.setenv("GROQ_API_KEY", "test-only-key")
+    client = client_from_env()
+    assert isinstance(client, InterviewLLMClient)
+    assert client._base_url == "https://api.groq.com/openai/v1/chat/completions"

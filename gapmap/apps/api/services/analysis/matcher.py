@@ -3,6 +3,7 @@
 from gapmap.apps.api.contracts import (
     EvidenceStatus, Requirement, RoadmapItem, VerificationCapability,
 )
+from gapmap.apps.api.services.analysis.plans import skill_label
 from gapmap.apps.api.services.projects.registry import PROJECT_REGISTRY, ProjectTemplate
 
 
@@ -34,8 +35,13 @@ GAP_FACTOR = {
 
 def build_roadmap(requirements: list[Requirement]) -> list[RoadmapItem]:
     # Python's stable sort preserves original posting order on equal priority.
+    # Eligibility facts (degree, graduation date, authorization) are not skills
+    # a project can build, so they never become next actions.
     ordered = sorted(
-        (item for item in requirements if GAP_FACTOR[item.evidence_status]),
+        (
+            item for item in requirements
+            if GAP_FACTOR[item.evidence_status] and item.skill_ids != ["eligibility"]
+        ),
         key=lambda item: -(item.importance * GAP_FACTOR[item.evidence_status]),
     )
     roadmap = []
@@ -46,9 +52,11 @@ def build_roadmap(requirements: list[Requirement]) -> list[RoadmapItem]:
             else:
                 action = "Complete the revenue debugging project to build SQL project evidence"
             if item.uncovered_skill_ids:
-                action += "; build a separate portfolio example for " + ", ".join(item.uncovered_skill_ids)
-                action += " (these skills cannot be verified by this project)"
+                labels = ", ".join(skill_label(skill) for skill in item.uncovered_skill_ids)
+                action += f"; it cannot test {labels}, so use the project plan for that"
         else:
-            action = f"Build a learning or portfolio example for {item.label}; no MVP assessment is available"
+            plan = item.project_plans[0] if item.project_plans else None
+            title = plan.title if plan else "Build a portfolio project"
+            action = f"{title} to show {item.label} (not graded by GapMap yet)"
         roadmap.append(RoadmapItem(requirement_id=item.id, action=action, priority=priority))
     return roadmap

@@ -15,7 +15,7 @@ from gapmap.apps.api.contracts import (
     CompetencyScore,
     EvidenceStatus,
     ProjectRecommendationResponse,
-    ProjectPlansResponse,
+    ProjectBriefsResponse,
     ReadinessResponse,
     Requirement,
     SubmitResponse,
@@ -38,7 +38,7 @@ class InMemorySessionStore:
         self._lock = RLock()
         self._sessions: dict[UUID, _Session] = {}
         self._analysis_to_session: dict[UUID, UUID] = {}
-        self._plans: dict[tuple[UUID, UUID], ProjectPlansResponse] = {}
+        self._plans: dict[tuple[UUID, UUID], ProjectBriefsResponse] = {}
 
     def create_analysis(self, draft: AnalysisDraft) -> AnalysisResponse:
         with self._lock:
@@ -74,7 +74,7 @@ class InMemorySessionStore:
 
     def load_plans(
         self, session_id: UUID, analysis_id: UUID,
-    ) -> ProjectPlansResponse | None:
+    ) -> ProjectBriefsResponse | None:
         """Stored briefs for the exact (session, analysis) pair, never a neighbor's."""
         with self._lock:
             session = self._sessions.get(session_id)
@@ -84,7 +84,7 @@ class InMemorySessionStore:
             return stored.model_copy(deep=True) if stored is not None else None
 
     def store_plans(
-        self, session_id: UUID, analysis_id: UUID, plans: ProjectPlansResponse,
+        self, session_id: UUID, analysis_id: UUID, plans: ProjectBriefsResponse,
     ) -> bool:
         """Cache validated briefs; return false for an unknown or mismatched pair."""
         with self._lock:

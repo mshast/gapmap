@@ -1,6 +1,6 @@
-import type { ProjectPlan, ProjectPlans } from "@/lib/types";
+import type { ProjectBrief, ProjectBriefs } from "@/lib/types";
 
-type Milestone = ProjectPlan["milestones"][number];
+type Milestone = ProjectBrief["milestones"][number];
 
 function milestone(
   title: string,
@@ -12,7 +12,7 @@ function milestone(
   return { title, work, acceptance_criteria: acceptance, tests, evidence };
 }
 
-const sqlPlan: ProjectPlan = {
+const sqlPlan: ProjectBrief = {
   id: "plan-req-sql",
   requirement_id: "req-sql",
   title: "Investigate an E-commerce Revenue Bug",
@@ -96,7 +96,7 @@ const sqlPlan: ProjectPlan = {
   runnable_project_id: "revenue-debug-001",
 };
 
-const pythonPlan: ProjectPlan = {
+const pythonPlan: ProjectBrief = {
   id: "plan-req-python",
   requirement_id: "req-python",
   title: "Invoice Reconciliation Tool — Python programming",
@@ -182,7 +182,7 @@ const pythonPlan: ProjectPlan = {
   runnable_project_id: null,
 };
 
-const reactPlan: ProjectPlan = {
+const reactPlan: ProjectBrief = {
   id: "plan-req-react",
   requirement_id: "req-react",
   title: "Incident Review Console — React user interfaces",
@@ -267,7 +267,7 @@ const reactPlan: ProjectPlan = {
   runnable_project_id: null,
 };
 
-const dockerPlan: ProjectPlan = {
+const dockerPlan: ProjectBrief = {
   id: "plan-req-docker",
   requirement_id: "req-docker",
   title: "Reproducible Service Container — Docker containers",
@@ -354,9 +354,9 @@ const dockerPlan: ProjectPlan = {
 
 /**
  * Fixture-mode briefs. They are labeled fallbacks and never claim a provider ran.
- * In live mode the same shape comes from GET /api/project-plans.
+ * In live mode the same shape comes from GET /api/project-briefs.
  */
-export function fixturePlans(sessionId: string, analysisId: string): ProjectPlans {
+export function fixturePlans(sessionId: string, analysisId: string): ProjectBriefs {
   return {
     session_id: sessionId,
     analysis_id: analysisId,

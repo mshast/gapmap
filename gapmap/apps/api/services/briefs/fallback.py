@@ -5,7 +5,7 @@ inputs and outputs, three milestones with completion checks, tests, and
 evidence. They are labeled ``source="fallback"`` and never claim grading.
 """
 
-from gapmap.apps.api.contracts import PlanMilestone, ProjectPlan, Requirement
+from gapmap.apps.api.contracts import BriefMilestone, ProjectBrief, Requirement
 from gapmap.apps.api.services.briefs.selection import family_for
 from gapmap.apps.api.services.projects.registry import (
     PROJECT_ID,
@@ -17,7 +17,7 @@ from gapmap.apps.api.services.projects.registry import (
 MilestoneSpec = tuple[str, tuple[str, ...], tuple[str, ...], tuple[str, ...], str]
 
 
-def fallback_plan(requirement: Requirement) -> ProjectPlan:
+def fallback_plan(requirement: Requirement) -> ProjectBrief:
     return _BUILDERS[family_for(requirement)](requirement)
 
 
@@ -33,8 +33,8 @@ def _build(
     deliverables: tuple[str, ...],
     milestones: tuple[MilestoneSpec, ...],
     runnable_project_id: str | None = None,
-) -> ProjectPlan:
-    return ProjectPlan(
+) -> ProjectBrief:
+    return ProjectBrief(
         id=f"plan-{requirement.id}",
         requirement_id=requirement.id,
         title=title,
@@ -47,7 +47,7 @@ def _build(
         constraints=list(constraints),
         deliverables=list(deliverables),
         milestones=[
-            PlanMilestone(
+            BriefMilestone(
                 title=item[0],
                 work=list(item[1]),
                 acceptance_criteria=list(item[2]),
@@ -61,7 +61,7 @@ def _build(
     )
 
 
-def _python(requirement: Requirement) -> ProjectPlan:
+def _python(requirement: Requirement) -> ProjectBrief:
     label = requirement.label
     return _build(
         requirement,
@@ -151,7 +151,7 @@ def _python(requirement: Requirement) -> ProjectPlan:
     )
 
 
-def _react(requirement: Requirement) -> ProjectPlan:
+def _react(requirement: Requirement) -> ProjectBrief:
     label = requirement.label
     return _build(
         requirement,
@@ -240,7 +240,7 @@ def _react(requirement: Requirement) -> ProjectPlan:
     )
 
 
-def _docker(requirement: Requirement) -> ProjectPlan:
+def _docker(requirement: Requirement) -> ProjectBrief:
     label = requirement.label
     return _build(
         requirement,
@@ -329,7 +329,7 @@ def _docker(requirement: Requirement) -> ProjectPlan:
     )
 
 
-def _dsa(requirement: Requirement) -> ProjectPlan:
+def _dsa(requirement: Requirement) -> ProjectBrief:
     label = requirement.label
     return _build(
         requirement,
@@ -419,7 +419,7 @@ def _dsa(requirement: Requirement) -> ProjectPlan:
     )
 
 
-def _other(requirement: Requirement) -> ProjectPlan:
+def _other(requirement: Requirement) -> ProjectBrief:
     label = requirement.label
     return _build(
         requirement,
@@ -509,7 +509,7 @@ def _other(requirement: Requirement) -> ProjectPlan:
     )
 
 
-def _sql(requirement: Requirement) -> ProjectPlan:
+def _sql(requirement: Requirement) -> ProjectBrief:
     return _build(
         requirement,
         title=PROJECT_TITLE,

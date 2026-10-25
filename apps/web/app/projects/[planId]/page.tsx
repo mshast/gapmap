@@ -7,12 +7,12 @@ import { ArrowLeft, ArrowRight, Check, LoaderCircle } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { useAppState } from "@/components/AppStateProvider";
 import { getProject } from "@/lib/api";
-import type { ProjectPlan } from "@/lib/types";
+import type { ProjectBrief } from "@/lib/types";
 
-const sourceLabel = (source: ProjectPlan["source"]) =>
+const sourceLabel = (source: ProjectBrief["source"]) =>
   source === "generated" ? "Tailored from this posting" : "Fallback project template";
 
-export default function ProjectPlanPage({ params }: { params: Promise<{ planId: string }> }) {
+export default function ProjectBriefPage({ params }: { params: Promise<{ planId: string }> }) {
   const { planId } = use(params);
   const { state, setState, hydrated } = useAppState();
   const router = useRouter();

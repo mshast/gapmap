@@ -7,7 +7,7 @@ decides the question mix, follow-up cap, and summary in Python.
 from typing import Annotated, Literal
 from uuid import UUID
 
-from pydantic import Field, StringConstraints
+from pydantic import Field, StringConstraints, field_validator
 
 from gapmap.apps.api.contracts import Identifier, StrictModel
 
@@ -126,12 +126,25 @@ class ScoreDraft(StrictModel):
     answer_quote: Quote | None
 
 
+class AccuracyDraft(StrictModel):
+    # Models often mark "not applicable" with a null score inside the object
+    # rather than a null object, so the schema accepts both.
+    score: ScoreValue | None
+    comment: ShortText
+    answer_quote: Quote | None
+
+
 class ScoresDraft(StrictModel):
     relevance: ScoreDraft
     specificity: ScoreDraft
     structure: ScoreDraft
     impact: ScoreDraft
-    accuracy: ScoreDraft | None
+    accuracy: AccuracyDraft | None
+
+    @field_validator("accuracy")
+    @classmethod
+    def drop_unscored_accuracy(cls, value: AccuracyDraft | None) -> AccuracyDraft | None:
+        return None if value is not None and value.score is None else value
 
 
 class FeedbackDraft(StrictModel):

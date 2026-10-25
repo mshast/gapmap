@@ -51,7 +51,7 @@ Score each criterion from 1 (weak) to 4 (strong) using only this rubric:
   for technical and gap_probe questions, clear step-by-step reasoning.
 - impact: quantified or concrete outcomes and why they mattered.
 - accuracy: technical correctness. Score it only for technical and gap_probe
-  questions; it must be null for behavioral questions.
+  questions; for behavioral questions set the whole accuracy field to null.
 Give each score a one-sentence comment. Give each score an answer_quote: a short
 phrase (at most 25 words) copied character for character from answer_text that
 supports the score, or null if no phrase applies. Never quote anything else.

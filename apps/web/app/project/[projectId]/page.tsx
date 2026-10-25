@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ArrowLeft, ArrowRight, Check, CirclePlay, LoaderCircle, Send, Table2, TriangleAlert } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { SqlEditor } from "@/components/SqlEditor";
+import { StatusPill } from "@/components/StatusPill";
 import { useAppState } from "@/components/AppStateProvider";
 import { getProject, isMockMode, runQuery, submitTask } from "@/lib/api";
 import type { Project, ProjectTask, RunResult } from "@/lib/types";
@@ -37,6 +38,15 @@ export default function ProjectPage() {
   const query = task ? state.queries[task.id] ?? task.starter_sql : "";
   const preview = task ? state.previews[task.id] : undefined;
   const submission = task ? state.submissions[task.id] : undefined;
+  // A check means every visible test passed, not merely that a query was sent.
+  const passed = (taskId: string) => {
+    const result = state.submissions[taskId];
+    return Boolean(
+      result &&
+      result.public_test_feedback.length > 0 &&
+      result.public_test_feedback.every((item) => item.passed),
+    );
+  };
 
   function setQuery(taskId: string, value: string) {
     setState((current) => ({ ...current, queries: { ...current.queries, [taskId]: value } }));
@@ -108,7 +118,7 @@ export default function ProjectPage() {
               <button key={item.id} className={`task-tab${index === currentTaskIndex ? " selected" : ""}`} onClick={() => { setCurrentTaskIndex(index); setError(""); setNotice(""); }} aria-current={index === currentTaskIndex ? "step" : undefined}>
                 <span className="task-tab-number">0{index + 1}</span>
                 <span className="task-tab-title">{item.title}</span>
-                {state.submissions[item.id] && <Check className="task-tab-check" size={15} />}
+                {passed(item.id) && <Check className="task-tab-check" size={15} aria-label="All visible checks passed" />}
               </button>
             ))}
             <div className="task-rail-note"><span className="rail-rule" />Draft queries stay saved in this browser session.</div>
@@ -123,7 +133,7 @@ export default function ProjectPage() {
             {error && <div className="form-error" role="alert"><TriangleAlert size={16} />{error}<button className="text-button" onClick={runPreview}>Retry preview</button></div>}
             {notice && <div className="success-note" role="status"><Check size={16} />{notice}<Link href="/results">View results <ArrowRight size={14} /></Link></div>}
             {preview && <section className="preview-section"><div className="preview-heading"><div><p className="eyebrow">PREVIEW RESULT</p><h3>Visible sample only</h3></div><span>{preview.rows.length} rows</span></div>{renderPreview(preview)}<p className="preview-caveat">A preview confirms the query can return rows. It is not a grading verdict.</p></section>}
-            {submission && <section className="submission-section"><div className="preview-heading"><div><p className="eyebrow">SUBMISSION FEEDBACK</p><h3>{submission.task_score.earned} / {submission.task_score.possible} points</h3></div><span className="status-pill status-partially_demonstrated">{submission.task_id}</span></div><div className="feedback-list">{submission.public_test_feedback.map((item) => <div className="feedback-item" key={item.label}><span className={`feedback-mark${item.passed ? " passed" : " failed"}`}>{item.passed ? <Check size={13} /> : <TriangleAlert size={13} />}</span><div><b>{item.label}</b><p>{item.explanation}</p></div></div>)}</div></section>}
+            {submission && <section className="submission-section"><div className="preview-heading"><div><p className="eyebrow">SUBMISSION FEEDBACK</p><h3>{submission.task_score.earned} / {submission.task_score.possible} points</h3></div><span className="status-pill status-partially_demonstrated">{submission.task_id}</span></div><div className="feedback-list">{submission.public_test_feedback.map((item) => <div className="feedback-item" key={item.label}><span className={`feedback-mark${item.passed ? " passed" : " failed"}`}>{item.passed ? <Check size={13} /> : <TriangleAlert size={13} />}</span><div><b>{item.label}</b><p>{item.explanation}</p></div></div>)}</div><div className="competency-feedback">{submission.competency_scores.map((score) => <div className="competency-feedback-row" key={score.skill_id}><span>{score.skill_id.replaceAll("_", " ")}</span><span>{score.earned} / {score.possible}</span><StatusPill status={score.status} /></div>)}</div></section>}
             <div className="task-pagination"><span>{currentTaskIndex + 1} of {project.tasks.length}</span>{currentTaskIndex < project.tasks.length - 1 ? <button className="button button-text" onClick={() => { setCurrentTaskIndex((index) => index + 1); setError(""); setNotice(""); }}>Next task <ArrowRight size={15} /></button> : <Link className="button button-text" href="/results">Project results <ArrowRight size={15} /></Link>}</div>
           </div>
         </div>

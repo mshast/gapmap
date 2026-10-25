@@ -108,6 +108,51 @@ class ProjectResponse(StrictModel):
     competencies: list[Identifier]
 
 
+PlanSource = Literal["generated", "fallback"]
+PlanTitle = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=120)]
+PlanText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=240)]
+PlanProse = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=700)]
+
+
+class PlanMilestone(StrictModel):
+    title: PlanTitle
+    work: list[PlanText] = Field(min_length=2, max_length=3)
+    acceptance_criteria: list[PlanText] = Field(min_length=2, max_length=4)
+    tests: list[PlanText] = Field(min_length=2, max_length=4)
+    evidence: PlanText
+
+
+class ProjectPlan(StrictModel):
+    id: Identifier
+    requirement_id: Identifier
+    title: PlanTitle
+    summary: PlanProse
+    job_quote: str
+    skills: list[Identifier] = Field(min_length=1, max_length=8)
+    scenario: PlanProse
+    inputs: list[PlanText] = Field(min_length=1, max_length=6)
+    outputs: list[PlanText] = Field(min_length=1, max_length=6)
+    constraints: list[PlanText] = Field(min_length=1, max_length=6)
+    deliverables: list[PlanText] = Field(min_length=1, max_length=6)
+    milestones: list[PlanMilestone] = Field(min_length=3, max_length=5)
+    source: PlanSource
+    # Only the existing graded SQL project may set this.
+    runnable_project_id: str | None = None
+
+
+class GeneratePlansRequest(StrictModel):
+    session_id: UUID
+    analysis_id: UUID
+
+
+class ProjectPlansResponse(StrictModel):
+    session_id: UUID
+    analysis_id: UUID
+    plans: list[ProjectPlan] = Field(default_factory=list, max_length=4)
+    source: Literal["generated", "fallback", "mixed"]
+    message: str
+
+
 class RunRequest(StrictModel):
     session_id: UUID
     task_id: Identifier

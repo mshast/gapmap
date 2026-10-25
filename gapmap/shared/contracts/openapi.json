@@ -432,6 +432,27 @@
         "title": "EvidenceStatus",
         "type": "string"
       },
+      "GeneratePlansRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "analysis_id": {
+            "format": "uuid",
+            "title": "Analysis Id",
+            "type": "string"
+          },
+          "session_id": {
+            "format": "uuid",
+            "title": "Session Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "analysis_id"
+        ],
+        "title": "GeneratePlansRequest",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -572,6 +593,248 @@
           "mode"
         ],
         "title": "InterviewSummary",
+        "type": "object"
+      },
+      "PlanMilestone": {
+        "additionalProperties": false,
+        "properties": {
+          "acceptance_criteria": {
+            "items": {
+              "maxLength": 240,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 4,
+            "minItems": 2,
+            "title": "Acceptance Criteria",
+            "type": "array"
+          },
+          "evidence": {
+            "maxLength": 240,
+            "minLength": 1,
+            "title": "Evidence",
+            "type": "string"
+          },
+          "tests": {
+            "items": {
+              "maxLength": 240,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 4,
+            "minItems": 2,
+            "title": "Tests",
+            "type": "array"
+          },
+          "title": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          },
+          "work": {
+            "items": {
+              "maxLength": 240,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 3,
+            "minItems": 2,
+            "title": "Work",
+            "type": "array"
+          }
+        },
+        "required": [
+          "title",
+          "work",
+          "acceptance_criteria",
+          "tests",
+          "evidence"
+        ],
+        "title": "PlanMilestone",
+        "type": "object"
+      },
+      "ProjectPlan": {
+        "additionalProperties": false,
+        "properties": {
+          "constraints": {
+            "items": {
+              "maxLength": 240,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 6,
+            "minItems": 1,
+            "title": "Constraints",
+            "type": "array"
+          },
+          "deliverables": {
+            "items": {
+              "maxLength": 240,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 6,
+            "minItems": 1,
+            "title": "Deliverables",
+            "type": "array"
+          },
+          "id": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Id",
+            "type": "string"
+          },
+          "inputs": {
+            "items": {
+              "maxLength": 240,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 6,
+            "minItems": 1,
+            "title": "Inputs",
+            "type": "array"
+          },
+          "job_quote": {
+            "title": "Job Quote",
+            "type": "string"
+          },
+          "milestones": {
+            "items": {
+              "$ref": "#/components/schemas/PlanMilestone"
+            },
+            "maxItems": 5,
+            "minItems": 3,
+            "title": "Milestones",
+            "type": "array"
+          },
+          "outputs": {
+            "items": {
+              "maxLength": 240,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 6,
+            "minItems": 1,
+            "title": "Outputs",
+            "type": "array"
+          },
+          "requirement_id": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Requirement Id",
+            "type": "string"
+          },
+          "runnable_project_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Runnable Project Id"
+          },
+          "scenario": {
+            "maxLength": 700,
+            "minLength": 1,
+            "title": "Scenario",
+            "type": "string"
+          },
+          "skills": {
+            "items": {
+              "maxLength": 100,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 8,
+            "minItems": 1,
+            "title": "Skills",
+            "type": "array"
+          },
+          "source": {
+            "enum": [
+              "generated",
+              "fallback"
+            ],
+            "title": "Source",
+            "type": "string"
+          },
+          "summary": {
+            "maxLength": 700,
+            "minLength": 1,
+            "title": "Summary",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "requirement_id",
+          "title",
+          "summary",
+          "job_quote",
+          "skills",
+          "scenario",
+          "inputs",
+          "outputs",
+          "constraints",
+          "deliverables",
+          "milestones",
+          "source"
+        ],
+        "title": "ProjectPlan",
+        "type": "object"
+      },
+      "ProjectPlansResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "analysis_id": {
+            "format": "uuid",
+            "title": "Analysis Id",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "plans": {
+            "items": {
+              "$ref": "#/components/schemas/ProjectPlan"
+            },
+            "maxItems": 4,
+            "title": "Plans",
+            "type": "array"
+          },
+          "session_id": {
+            "format": "uuid",
+            "title": "Session Id",
+            "type": "string"
+          },
+          "source": {
+            "enum": [
+              "generated",
+              "fallback",
+              "mixed"
+            ],
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "analysis_id",
+          "source",
+          "message"
+        ],
+        "title": "ProjectPlansResponse",
         "type": "object"
       },
       "ProjectRecommendationResponse": {
@@ -1422,6 +1685,94 @@
           }
         },
         "summary": "Interview Summary"
+      }
+    },
+    "/api/project-plans": {
+      "get": {
+        "operationId": "project_plans_api_project_plans_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Session Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "analysis_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Analysis Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectPlansResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Project Plans"
+      }
+    },
+    "/api/project-plans/generate": {
+      "post": {
+        "operationId": "generate_project_plans_api_project_plans_generate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GeneratePlansRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectPlansResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Generate Project Plans"
       }
     },
     "/api/projects/recommended": {

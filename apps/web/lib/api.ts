@@ -1,10 +1,12 @@
 import type {
   Analysis,
   Project,
+  ProjectPlans,
   Readiness,
   RunResult,
   Submission,
 } from "@/lib/types";
+import { fixturePlans } from "@/lib/fixturePlans";
 
 export const isMockMode = process.env.NEXT_PUBLIC_GAPMAP_MOCK !== "false";
 const apiBase = process.env.NEXT_PUBLIC_GAPMAP_API_URL ?? "";
@@ -184,7 +186,10 @@ export async function analyze(resumeText: string, jobDescription: string): Promi
       session_id: crypto.randomUUID(),
       analysis_id: crypto.randomUUID(),
       analysis_mode: "demo",
-      warnings: ["Fixture mode: no AI service ran."],
+      warnings: [
+        "Fixture mode: the pasted posting was not analyzed. This is the bundled example role.",
+        "Fixture mode: no AI service ran. Connect the API for live analysis.",
+      ],
       target_role: "Software Engineering Intern",
       recommended_project_id: demoProject.id,
       requirements: mockRequirements(resumeText),
@@ -294,4 +299,26 @@ export async function submitTask(
 export async function getReadiness(sessionId: string): Promise<Readiness> {
   if (isMockMode) throw new Error("Mock readiness is derived from the saved demo session.");
   return request(`/api/readiness?session_id=${encodeURIComponent(sessionId)}`);
+}
+
+export async function getProjectPlans(
+  sessionId: string,
+  analysisId: string,
+): Promise<ProjectPlans> {
+  if (isMockMode) return fixturePlans(sessionId, analysisId);
+  return request(
+    `/api/project-plans?session_id=${encodeURIComponent(sessionId)}&analysis_id=${encodeURIComponent(analysisId)}`,
+  );
+}
+
+export async function generateProjectPlans(
+  sessionId: string,
+  analysisId: string,
+): Promise<ProjectPlans> {
+  if (isMockMode) return fixturePlans(sessionId, analysisId);
+  return request("/api/project-plans/generate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ session_id: sessionId, analysis_id: analysisId }),
+  });
 }

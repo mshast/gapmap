@@ -123,6 +123,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/project-plans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Project Plans */
+        get: operations["project_plans_api_project_plans_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/project-plans/generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Generate Project Plans */
+        post: operations["generate_project_plans_api_project_plans_generate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/projects/recommended": {
         parameters: {
             query?: never;
@@ -372,6 +406,19 @@ export interface components {
          * @enum {string}
          */
         EvidenceStatus: "unverified" | "resume_evidence" | "partially_demonstrated" | "demonstrated_on_project";
+        /** GeneratePlansRequest */
+        GeneratePlansRequest: {
+            /**
+             * Analysis Id
+             * Format: uuid
+             */
+            analysis_id: string;
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -425,6 +472,75 @@ export interface components {
             /** Total Questions */
             total_questions: number;
             weakest_answer: components["schemas"]["AnswerHighlight"];
+        };
+        /** PlanMilestone */
+        PlanMilestone: {
+            /** Acceptance Criteria */
+            acceptance_criteria: string[];
+            /** Evidence */
+            evidence: string;
+            /** Tests */
+            tests: string[];
+            /** Title */
+            title: string;
+            /** Work */
+            work: string[];
+        };
+        /** ProjectPlan */
+        ProjectPlan: {
+            /** Constraints */
+            constraints: string[];
+            /** Deliverables */
+            deliverables: string[];
+            /** Id */
+            id: string;
+            /** Inputs */
+            inputs: string[];
+            /** Job Quote */
+            job_quote: string;
+            /** Milestones */
+            milestones: components["schemas"]["PlanMilestone"][];
+            /** Outputs */
+            outputs: string[];
+            /** Requirement Id */
+            requirement_id: string;
+            /** Runnable Project Id */
+            runnable_project_id?: string | null;
+            /** Scenario */
+            scenario: string;
+            /** Skills */
+            skills: string[];
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "generated" | "fallback";
+            /** Summary */
+            summary: string;
+            /** Title */
+            title: string;
+        };
+        /** ProjectPlansResponse */
+        ProjectPlansResponse: {
+            /**
+             * Analysis Id
+             * Format: uuid
+             */
+            analysis_id: string;
+            /** Message */
+            message: string;
+            /** Plans */
+            plans?: components["schemas"]["ProjectPlan"][];
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "generated" | "fallback" | "mixed";
         };
         /** ProjectRecommendationResponse */
         ProjectRecommendationResponse: {
@@ -842,6 +958,71 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["InterviewSummary"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    project_plans_api_project_plans_get: {
+        parameters: {
+            query: {
+                session_id: string;
+                analysis_id: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectPlansResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generate_project_plans_api_project_plans_generate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GeneratePlansRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectPlansResponse"];
                 };
             };
             /** @description Validation Error */

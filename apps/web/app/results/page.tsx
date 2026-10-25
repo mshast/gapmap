@@ -7,7 +7,6 @@ import { AppShell } from "@/components/AppShell";
 import { StatusPill } from "@/components/StatusPill";
 import { useAppState } from "@/components/AppStateProvider";
 import { getReadiness, isMockMode } from "@/lib/api";
-import { plansForRequirements } from "@/lib/projectPlans";
 import type { EvidenceStatus } from "@/lib/types";
 
 const skillLabels: Record<string, string> = {
@@ -74,8 +73,7 @@ export default function ResultsPage() {
   if (!analysis) return <AppShell><div className="page-wrap empty-state"><h1>No results yet.</h1><p>Start with a role and build a work sample.</p><Link className="button button-primary" href="/">Go to input <ArrowRight size={16} /></Link></div></AppShell>;
 
   const roadmap = state.readiness?.roadmap ?? analysis.roadmap ?? [];
-  const updatedRequirements = state.readiness?.requirements ?? analysis.requirements;
-  const gapPlans = plansForRequirements(updatedRequirements);
+  const briefs = state.plans?.analysis_id === analysis?.analysis_id ? state.plans : null;
 
   return (
     <AppShell>
@@ -119,7 +117,7 @@ export default function ResultsPage() {
 
         <section className="roadmap-band"><div><p className="eyebrow">NEXT STEPS / IN PRIORITY ORDER</p><h2>Keep building evidence.</h2></div><ol>{roadmap.slice(0, 3).map((item, index) => <li key={`${item.requirement_id}-${item.priority}`}><span className="roadmap-index">0{index + 1}</span><span>{item.action}</span></li>)}</ol></section>
 
-        <section className="recommendation-section results-recommendations" aria-labelledby="gap-projects-title"><div className="section-heading"><div><p className="stage-kicker">GAPS TO TACKLE</p><h2 id="gap-projects-title">Concrete project ideas for what is still missing.</h2></div><span className="section-note">Choose one next</span></div>{gapPlans.length > 0 ? <div className="plan-grid">{gapPlans.map((plan) => <article className="plan-card" key={plan.id}><span className="plan-label">SPEC PLAN · {plan.skills.join(" · ")}</span><h3>{plan.title}</h3><p>{plan.why}</p><p className="plan-deliverable"><b>Deliverable:</b> {plan.deliverable}</p><ol>{plan.steps.map((step) => <li key={step}>{step}</li>)}</ol><Link className="button button-outline" href={`/projects/${plan.id}`}>View project plan <ArrowRight size={15} /></Link></article>)}</div> : <div className="empty-result">Your assessed skills have no remaining mapped gaps. Keep this result as evidence and add another project when your target role changes.</div>}</section>
+        {briefs && (briefs.plans?.length ?? 0) > 0 && <section className="recommendation-section results-recommendations" aria-labelledby="gap-projects-title"><div className="section-heading"><div><p className="stage-kicker">PROJECT BRIEFS</p><h2 id="gap-projects-title">Concrete projects for what is still missing.</h2></div><span className="section-note">{briefs.source === "generated" ? "Tailored from this posting" : "Fallback templates"}</span></div><div className="plan-grid">{(briefs.plans ?? []).slice(0, 3).map((plan) => <article className="plan-card" key={plan.id}><span className="plan-label">{plan.skills.join(" · ")}</span><h3>{plan.title}</h3><p>{plan.summary}</p><p className="plan-deliverable"><b>Deliverable:</b> {plan.deliverables[0]}</p><p className="plan-meta">{plan.milestones.length} milestones</p><Link className="button button-outline" href={`/projects/${plan.id}`}>View project brief <ArrowRight size={15} /></Link></article>)}</div></section>}
       </section>
     </AppShell>
   );

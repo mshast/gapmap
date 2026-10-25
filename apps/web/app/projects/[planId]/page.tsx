@@ -7,7 +7,10 @@ import { ArrowLeft, ArrowRight, Check, LoaderCircle } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { useAppState } from "@/components/AppStateProvider";
 import { getProject } from "@/lib/api";
-import { findPlan } from "@/lib/projectPlans";
+import type { ProjectPlan } from "@/lib/types";
+
+const sourceLabel = (source: ProjectPlan["source"]) =>
+  source === "generated" ? "Tailored from this posting" : "Fallback project template";
 
 export default function ProjectPlanPage({ params }: { params: Promise<{ planId: string }> }) {
   const { planId } = use(params);
@@ -16,16 +19,15 @@ export default function ProjectPlanPage({ params }: { params: Promise<{ planId: 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const analysis = state.analysis;
-  const readiness = state.readiness?.session_id === analysis?.session_id ? state.readiness : null;
-  const requirements = readiness?.requirements ?? analysis?.requirements ?? [];
-  const plan = findPlan(requirements, planId);
+  const briefs = state.plans?.analysis_id === analysis?.analysis_id ? state.plans : null;
+  const plan = briefs?.plans?.find((item) => item.id === planId);
 
   async function startAssessment() {
-    if (!plan?.runnableProjectId) return;
+    if (!plan?.runnable_project_id) return;
     setError("");
     setLoading(true);
     try {
-      const project = await getProject(plan.runnableProjectId);
+      const project = await getProject(plan.runnable_project_id);
       setState((current) => ({ ...current, project }));
       router.push(`/project/${project.id}`);
     } catch (caught) {
@@ -34,18 +36,69 @@ export default function ProjectPlanPage({ params }: { params: Promise<{ planId: 
     }
   }
 
-  if (!hydrated) return <AppShell><div className="page-wrap loading-state"><LoaderCircle className="spin" /> Loading project plan…</div></AppShell>;
-  if (!analysis) return <AppShell><div className="page-wrap empty-state"><p className="eyebrow">PROJECT PLAN</p><h1>Start with a role.</h1><p>Your project plan is built from the gaps in a saved role analysis.</p><Link className="button button-primary" href="/">Go to input <ArrowRight size={16} /></Link></div></AppShell>;
-  if (!plan) return <AppShell><div className="page-wrap empty-state"><p className="eyebrow">PROJECT PLAN</p><h1>This plan is no longer available.</h1><p>The analysis may have changed. Return to your evidence map to choose a current recommendation.</p><Link className="button button-primary" href="/readiness">Back to evidence map <ArrowRight size={16} /></Link></div></AppShell>;
+  if (!hydrated) return <AppShell><div className="page-wrap loading-state"><LoaderCircle className="spin" /> Loading project brief…</div></AppShell>;
+  if (!analysis) return <AppShell><div className="page-wrap empty-state"><p className="eyebrow">PROJECT BRIEF</p><h1>Start with a role.</h1><p>Project briefs are built from the gaps in a saved role analysis.</p><Link className="button button-primary" href="/">Go to input <ArrowRight size={16} /></Link></div></AppShell>;
+  if (!plan) return <AppShell><div className="page-wrap empty-state"><p className="eyebrow">PROJECT BRIEF</p><h1>This brief is not loaded.</h1><p>{briefs ? "The analysis may have changed. Return to the evidence map to choose a current brief." : "Open the evidence map to load the project briefs for this analysis."}</p><Link className="button button-primary" href="/readiness">Back to evidence map <ArrowRight size={16} /></Link></div></AppShell>;
 
   return <AppShell><section className="page-wrap project-spec-page">
-    <div className="project-backline"><Link className="back-link" href="/readiness"><ArrowLeft size={15} /> Evidence map</Link><span className="project-step">PROJECT SPEC</span></div>
-    <header className="project-spec-header"><p className="stage-kicker">TARGETED TO {analysis.target_role}</p><h1>{plan.title}</h1><p className="intro-copy">{plan.why}</p></header>
+    <div className="project-backline"><Link className="back-link" href="/readiness"><ArrowLeft size={15} /> Evidence map</Link><span className="project-step">PROJECT BRIEF</span></div>
+    <header className="project-spec-header">
+      <p className="stage-kicker">TARGETED TO {analysis.target_role}</p>
+      <h1>{plan.title}</h1>
+      <p className="plan-source">{sourceLabel(plan.source)} · {plan.skills.join(" · ")}</p>
+      <p className="intro-copy">{plan.summary}</p>
+      <blockquote className="brief-quote">“{plan.job_quote}”</blockquote>
+    </header>
+
     <div className="project-spec-grid">
-      <section className="project-spec-block"><p className="eyebrow">DELIVERABLE</p><h2>What you will ship</h2><p>{plan.deliverable}</p><div className="project-spec-skills"><span>Skills this demonstrates</span><strong>{plan.skills.join(" · ")}</strong></div></section>
-      <section className="project-spec-block"><p className="eyebrow">BUILD PLAN</p><h2>Milestones and completion checks</h2><ol className="project-spec-steps">{plan.steps.map((step, index) => <li key={step}><span className="project-spec-number">0{index + 1}</span><div><strong>{step}</strong><span><Check size={14} /> Complete when this milestone is working and documented.</span></div></li>)}</ol></section>
+      <section className="project-spec-block">
+        <p className="eyebrow">SCENARIO</p>
+        <h2>Who this is for</h2>
+        <p>{plan.scenario}</p>
+      </section>
+      <section className="project-spec-block">
+        <p className="eyebrow">INPUTS / OUTPUTS</p>
+        <h2>What goes in, what comes out</h2>
+        <div className="brief-columns">
+          <div><h3>Inputs</h3><ul className="brief-list">{plan.inputs.map((item) => <li key={item}>{item}</li>)}</ul></div>
+          <div><h3>Outputs</h3><ul className="brief-list">{plan.outputs.map((item) => <li key={item}>{item}</li>)}</ul></div>
+        </div>
+      </section>
+      <section className="project-spec-block">
+        <p className="eyebrow">CONSTRAINTS</p>
+        <h2>Limits that make it testable</h2>
+        <ul className="brief-list">{plan.constraints.map((item) => <li key={item}>{item}</li>)}</ul>
+      </section>
+      <section className="project-spec-block">
+        <p className="eyebrow">DELIVERABLES</p>
+        <h2>What you publish</h2>
+        <ul className="brief-list">{plan.deliverables.map((item) => <li key={item}>{item}</li>)}</ul>
+      </section>
     </div>
-    <div className="project-spec-actions">{plan.runnableProjectId ? <button className="button button-primary" type="button" onClick={startAssessment} disabled={loading}>{loading ? <LoaderCircle className="spin" size={16} /> : <>Start graded assessment <ArrowRight size={16} /></>}</button> : <p>This project is a guided portfolio plan. Automated grading is not available for it yet.</p>}</div>
+
+    <section className="brief-milestones" aria-labelledby="milestones-title">
+      <div className="section-heading"><div><p className="stage-kicker">BUILD PLAN</p><h2 id="milestones-title">Milestones and completion checks</h2></div><span className="section-note">{plan.milestones.length} ordered milestones</span></div>
+      <ol className="milestone-list">
+        {plan.milestones.map((milestone, index) => <li className="milestone" key={`${milestone.title}-${index}`}>
+          <span className="milestone-index">0{index + 1}</span>
+          <div>
+            <h3>{milestone.title}</h3>
+            <div className="milestone-grid">
+              <div><h4>Work</h4><ul className="brief-list">{milestone.work.map((item) => <li key={item}>{item}</li>)}</ul></div>
+              <div><h4>Done when</h4><ul className="brief-list">{milestone.acceptance_criteria.map((item) => <li key={item}>{item}</li>)}</ul></div>
+              <div><h4>Tests</h4><ul className="brief-list">{milestone.tests.map((item) => <li key={item}>{item}</li>)}</ul></div>
+            </div>
+            <p className="milestone-evidence"><Check size={14} /><span><b>Evidence:</b> {milestone.evidence}</span></p>
+          </div>
+        </li>)}
+      </ol>
+    </section>
+
+    <div className="project-spec-actions">
+      {plan.runnable_project_id
+        ? <button className="button button-primary" type="button" onClick={startAssessment} disabled={loading}>{loading ? <LoaderCircle className="spin" size={16} /> : <>Start graded assessment <ArrowRight size={16} /></>}</button>
+        : <p>This is a portfolio brief. Automated grading is available only for the SQL revenue project.</p>}
+    </div>
     {error && <div className="form-error" role="alert">{error}</div>}
   </section></AppShell>;
 }

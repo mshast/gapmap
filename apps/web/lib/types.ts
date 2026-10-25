@@ -8,6 +8,8 @@ export type ProjectTask = components["schemas"]["ProjectTask"];
 export type RunResult = components["schemas"]["RunResponse"];
 export type Submission = components["schemas"]["SubmitResponse"];
 export type EvidenceStatus = components["schemas"]["EvidenceStatus"];
+export type ProjectPlan = components["schemas"]["ProjectPlan"];
+export type ProjectPlans = components["schemas"]["ProjectPlansResponse"];
 
 export type AppState = {
   resumeText: string;
@@ -18,6 +20,8 @@ export type AppState = {
   previews: Record<string, RunResult>;
   submissions: Record<string, Submission>;
   readiness: Readiness | null;
+  // Briefs are stored with their analysis id so a stale set can never render.
+  plans: ProjectPlans | null;
 };
 
 export const initialState: AppState = {
@@ -29,4 +33,5 @@ export const initialState: AppState = {
   previews: {},
   submissions: {},
   readiness: null,
+  plans: null,
 };

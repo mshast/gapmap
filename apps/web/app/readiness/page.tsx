@@ -2,21 +2,51 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, BadgeCheck, CircleHelp, LoaderCircle, LockKeyhole } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ArrowRight, BadgeCheck, CircleHelp, LoaderCircle, LockKeyhole, Sparkles, TriangleAlert } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { StatusPill } from "@/components/StatusPill";
 import { useAppState } from "@/components/AppStateProvider";
-import { getReadiness, isMockMode } from "@/lib/api";
-import { plansForRequirements } from "@/lib/projectPlans";
+import {
+  generateProjectPlans,
+  getProject,
+  getProjectPlans,
+  getReadiness,
+  isMockMode,
+} from "@/lib/api";
+import { cleanQuote } from "@/lib/text";
+import type { ProjectPlan } from "@/lib/types";
+
+const sourceLabel = (source: ProjectPlan["source"]) =>
+  source === "generated" ? "Tailored from this posting" : "Fallback project template";
 
 export default function ReadinessPage() {
   const { state, setState, hydrated } = useAppState();
+  const router = useRouter();
   const [error, setError] = useState("");
+  const [planError, setPlanError] = useState("");
+  const [generating, setGenerating] = useState(false);
+  const [starting, setStarting] = useState(false);
   const analysis = state.analysis;
-  const readiness = state.readiness?.session_id === analysis?.session_id ? state.readiness : null;
+  const sessionId = analysis?.session_id;
+  const analysisId = analysis?.analysis_id;
+  const readiness = state.readiness?.session_id === sessionId ? state.readiness : null;
   const requirements = readiness?.requirements ?? analysis?.requirements ?? [];
   const evidencedCount = requirements.filter((item) => item.evidence_status !== "unverified").length;
-  const plans = plansForRequirements(requirements);
+  const briefs = state.plans?.analysis_id === analysisId ? state.plans : null;
+  const plans = briefs?.plans ?? [];
+  // Loading is derived, so the effect below never sets state synchronously.
+  const loadingPlans = Boolean(sessionId) && !briefs && !planError;
+
+  useEffect(() => {
+    if (!hydrated || !sessionId || !analysisId) return;
+    if (state.plans?.analysis_id === analysisId || planError) return;
+    let active = true;
+    getProjectPlans(sessionId, analysisId)
+      .then((result) => { if (active) setState((current) => ({ ...current, plans: result })); })
+      .catch((caught: unknown) => { if (active) setPlanError(caught instanceof Error ? caught.message : "Project briefs could not be loaded."); });
+    return () => { active = false; };
+  }, [hydrated, sessionId, analysisId, state.plans?.analysis_id, planError, setState]);
 
   useEffect(() => {
     if (!hydrated || isMockMode || !analysis?.session_id) return;
@@ -27,14 +57,56 @@ export default function ReadinessPage() {
     return () => { active = false; };
   }, [analysis?.session_id, hydrated, setState]);
 
+  async function generate() {
+    if (!analysis?.session_id) return;
+    setGenerating(true);
+    setPlanError("");
+    try {
+      const result = await generateProjectPlans(analysis.session_id, analysis.analysis_id);
+      setState((current) => ({ ...current, plans: result }));
+    } catch (caught) {
+      setPlanError(caught instanceof Error ? caught.message : "Tailored briefs could not be generated.");
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  async function startProject(plan: ProjectPlan) {
+    if (!plan.runnable_project_id) return;
+    setStarting(true);
+    setError("");
+    try {
+      const project = await getProject(plan.runnable_project_id);
+      setState((current) => ({ ...current, project }));
+      router.push(`/project/${project.id}`);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "The graded assessment could not be loaded.");
+      setStarting(false);
+    }
+  }
+
   if (!hydrated) return <AppShell><div className="page-wrap loading-state"><LoaderCircle className="spin" /> Loading saved session…</div></AppShell>;
   if (!analysis) return <AppShell><div className="page-wrap empty-state"><p className="eyebrow">NO ANALYSIS YET</p><h1>Start with a role.</h1><p>Add a resume and posting to see traceable requirements.</p><Link className="button button-primary" href="/">Go to input <ArrowRight size={16} /></Link></div></AppShell>;
 
   return <AppShell><section className="page-wrap readiness-page">
     <div className="stage-header"><div><p className="stage-kicker">STEP 2 OF 3 · EVIDENCE MAP</p><h1>What this role asks — and what you can prove.</h1><p className="intro-copy">We found {requirements.length} requirements for <strong>{analysis.target_role}</strong>. Resume evidence is self-reported; project evidence is tested.</p></div><div className="evidence-counter"><strong>{evidencedCount}<span> / {requirements.length}</span></strong><small>with evidence so far</small></div></div>
     <div className="step-bar" aria-label="GapMap steps"><span className="done">1 Analyze</span><span className="current">2 Assess gaps</span><span>3 Choose next steps</span></div>
-    <div className="requirement-list" aria-label="Job requirements">{requirements.map((requirement) => <article className="requirement-row" key={requirement.id}><div className="requirement-main"><div className="requirement-title-line"><h2>{requirement.label}</h2><span className={`importance importance-${requirement.requirement_type}`}>{requirement.requirement_type}</span></div><blockquote>{requirement.job_quote}</blockquote>{(requirement.resume_quotes ?? []).length > 0 ? <div className="evidence-quote"><BadgeCheck size={15} /><span><b>Resume claim</b> “{requirement.resume_quotes?.[0]}”</span></div> : <div className="evidence-absent"><CircleHelp size={15} /><span>No resume evidence found. That is a gap to investigate, not a verdict.</span></div>}</div><div className="requirement-status"><StatusPill status={requirement.evidence_status} />{requirement.verification_capability === "not_assessable" ? <span className="not-covered"><LockKeyhole size={13} /> No matching test yet</span> : <span className="can-test">Covered by the SQL assessment</span>}</div></article>)}</div>
-    <section className="recommendation-section" aria-labelledby="assessment-title"><div className="section-heading"><div><p className="stage-kicker">PROJECT PLANS</p><h2 id="assessment-title">Projects matched to your specific gaps.</h2></div><span className="section-note">Start with the highest-priority gap</span></div><div className="plan-grid">{plans.slice(0, 4).map((plan) => <article className={`plan-card${plan.runnableProjectId ? " plan-card-primary" : ""}`} key={plan.id}><div><span className="plan-label">TARGETED SPEC · {plan.skills.join(" · ")}</span><h3>{plan.title}</h3><p>{plan.why}</p><p className="plan-deliverable"><b>You&apos;ll leave with:</b> {plan.deliverable}</p><ol>{plan.steps.map((step) => <li key={step}>{step}</li>)}</ol></div><Link className="button button-outline" href={`/projects/${plan.id}`}>View project plan <ArrowRight size={15} /></Link></article>)}</div></section>
-    {error && <div className="form-error" role="alert">{error}</div>}{isMockMode && <p className="fixture-note">Demo mode uses the labeled example role. Live mode generates this map from your posting.</p>}
+    {analysis.analysis_mode === "demo" && <div className="mock-banner" role="status"><TriangleAlert size={16} /><span><b>Demo fixture.</b> {analysis.warnings?.join(" ")}</span></div>}
+    <div className="requirement-list" aria-label="Job requirements">{requirements.map((requirement) => <article className="requirement-row" key={requirement.id}><div className="requirement-main"><div className="requirement-title-line"><h2>{requirement.label}</h2><span className={`importance importance-${requirement.requirement_type}`}>{requirement.requirement_type}</span></div><blockquote>{requirement.job_quote}</blockquote>{(requirement.resume_quotes ?? []).length > 0 ? <div className="evidence-quote"><BadgeCheck size={15} /><span><b>Resume claim</b> “{cleanQuote(requirement.resume_quotes?.[0] ?? "")}”</span></div> : <div className="evidence-absent"><CircleHelp size={15} /><span>No resume evidence found. That is a gap to investigate, not a verdict.</span></div>}</div><div className="requirement-status"><StatusPill status={requirement.evidence_status} />{requirement.verification_capability === "not_assessable" ? <span className="not-covered"><LockKeyhole size={13} /> No matching test yet</span> : <span className="can-test">Covered by the SQL assessment</span>}</div></article>)}</div>
+
+    <section className="recommendation-section" aria-labelledby="assessment-title">
+      <div className="section-heading">
+        <div><p className="stage-kicker">PROJECT BRIEFS</p><h2 id="assessment-title">Projects matched to your specific gaps.</h2></div>
+        <div className="plan-actions">
+          {!isMockMode && briefs?.source !== "generated" && <button className="button button-outline button-small" type="button" onClick={generate} disabled={generating || loadingPlans}>{generating ? <><LoaderCircle className="spin" size={14} /> Writing briefs</> : <><Sparkles size={14} /> Generate tailored projects</>}</button>}
+          {briefs?.source === "generated" && <span className="section-note">Tailored briefs are saved for this analysis.</span>}
+        </div>
+      </div>
+      {briefs?.message && <p className="plan-status" role="status">{briefs.message}</p>}
+      {planError && <div className="form-error" role="alert">{planError} <button className="text-button" type="button" onClick={() => setPlanError("")}>Retry</button></div>}
+      {loadingPlans && plans.length === 0 ? <div className="plan-grid" aria-busy="true">{[0, 1].map((index) => <div className="plan-card plan-skeleton" key={index}><span /><span /><span /></div>)}</div> : plans.length > 0 ? <div className="plan-grid">{plans.map((plan) => <article className={`plan-card${plan.runnable_project_id ? " plan-card-primary" : ""}`} key={plan.id}><div><span className="plan-label">{sourceLabel(plan.source)} · {plan.skills.join(" · ")}</span><h3>{plan.title}</h3><p>{plan.summary}</p><p className="plan-deliverable"><b>You&apos;ll leave with:</b> {plan.deliverables[0]}</p><p className="plan-meta">{plan.milestones.length} milestones · {plan.milestones.reduce((count, item) => count + item.tests.length, 0)} tests</p></div><div className="plan-card-actions">{plan.runnable_project_id && <button className="button button-primary" type="button" onClick={() => void startProject(plan)} disabled={starting}>{starting ? <><LoaderCircle className="spin" size={15} /> Opening</> : <>Start revenue debugging project <ArrowRight size={15} /></>}</button>}<Link className="button button-outline" href={`/projects/${plan.id}`}>View project brief <ArrowRight size={15} /></Link></div></article>)}</div> : <div className="empty-result">No project-eligible gaps remain for this analysis. Keep the graded result as evidence and add another posting when the target role changes.</div>}
+    </section>
+    {error && <div className="form-error" role="alert">{error}</div>}
+    {isMockMode && <p className="fixture-note">Demo mode uses the labeled example role. Generate tailored projects once the API is connected.</p>}
   </section></AppShell>;
 }

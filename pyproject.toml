@@ -29,6 +29,7 @@ packages = ["gapmap"]
 testpaths = [
   "gapmap/apps/api/tests",
   "gapmap/apps/api/services/interview/tests",
+  "gapmap/apps/api/services/briefs/tests",
   "gapmap/apps/api/services/projects/tests",
 ]
 addopts = "-q"

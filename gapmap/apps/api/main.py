@@ -6,6 +6,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from gapmap.apps.api.errors import install_error_handlers
 from gapmap.apps.api.routes import router
 from gapmap.apps.api.services.analysis import StructuredAnalysisService
+from gapmap.apps.api.services.briefs import ProjectPlanService
+from gapmap.apps.api.services.briefs.routes import router as project_plans_router
 from gapmap.apps.api.services.interfaces import (
     AnalysisService,
     ProjectService,
@@ -22,6 +24,7 @@ def create_app(
     project_service: ProjectService | None = None,
     session_store: InMemorySessionStore | None = None,
     interview_service: InterviewService | None = None,
+    project_plan_service: ProjectPlanService | None = None,
 ) -> FastAPI:
     application = FastAPI(title="GapMap API", version="0.1.0")
     application.state.analysis_service = (
@@ -31,6 +34,11 @@ def create_app(
     store = session_store or InMemorySessionStore()
     application.state.session_store = store
     application.state.interview_service = interview_service or InterviewService.from_env(store)
+    application.state.project_plan_service = (
+        project_plan_service
+        if project_plan_service is not None
+        else ProjectPlanService.from_env(store)
+    )
     application.add_middleware(
         CORSMiddleware,
         allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
@@ -40,6 +48,7 @@ def create_app(
     install_error_handlers(application)
     application.include_router(router)
     application.include_router(interview_router)
+    application.include_router(project_plans_router)
     return application
 
 

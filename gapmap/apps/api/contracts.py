@@ -52,6 +52,19 @@ class ResumeEvidence(StrictModel):
     strength: Literal["contextual", "keyword_only"]
 
 
+class ProjectPlan(StrictModel):
+    id: Identifier
+    title: str
+    skill_ids: list[Identifier] = Field(min_length=1)
+    why: str
+    deliverable: str
+    steps: list[str] = Field(min_length=1)
+    # graded: runnable, tested project. template: reviewed plan for a known
+    # skill. ai_suggested: an idea from the model, labeled as such in the UI.
+    source: Literal["graded", "template", "ai_suggested"]
+    runnable_project_id: str | None = None
+
+
 class Requirement(StrictModel):
     id: Identifier
     label: str
@@ -64,6 +77,7 @@ class Requirement(StrictModel):
     evidence_status: EvidenceStatus
     verification_capability: VerificationCapability
     uncovered_skill_ids: list[Identifier] = Field(default_factory=list)
+    project_plans: list[ProjectPlan] = Field(default_factory=list)
 
 
 class RoadmapItem(StrictModel):

@@ -73,6 +73,8 @@ class InterviewService:
         requirements = self._analysis.load_requirements(session_id, analysis_id)
         if not requirements:
             raise InterviewNotFoundError("Analysis not found for this session.")
+        # Degree, graduation date, and work authorization are not interview topics.
+        requirements = [item for item in requirements if item.skill_ids != ["eligibility"]]
         candidates = await self._verified_candidates(requirements)
         questions = [
             InterviewQuestion(id=f"q{index}", **draft.model_dump())

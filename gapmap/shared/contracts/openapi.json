@@ -94,6 +94,134 @@
         "title": "AnalyzeRequest",
         "type": "object"
       },
+      "AnswerFeedback": {
+        "additionalProperties": false,
+        "properties": {
+          "disclaimer": {
+            "default": "Practice feedback only. This is not a hiring prediction and does not change any verified skill evidence.",
+            "title": "Disclaimer",
+            "type": "string"
+          },
+          "follow_up": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Follow Up"
+          },
+          "follow_up_question_id": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Follow Up Question Id"
+          },
+          "improvements": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 3,
+            "minItems": 2,
+            "title": "Improvements",
+            "type": "array"
+          },
+          "mode": {
+            "enum": [
+              "llm",
+              "demo"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "question_id": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Question Id",
+            "type": "string"
+          },
+          "scores": {
+            "items": {
+              "$ref": "#/components/schemas/CriterionScore"
+            },
+            "title": "Scores",
+            "type": "array"
+          },
+          "suggested_rewrite": {
+            "title": "Suggested Rewrite",
+            "type": "string"
+          }
+        },
+        "required": [
+          "question_id",
+          "scores",
+          "improvements",
+          "suggested_rewrite",
+          "follow_up",
+          "follow_up_question_id",
+          "mode"
+        ],
+        "title": "AnswerFeedback",
+        "type": "object"
+      },
+      "AnswerHighlight": {
+        "additionalProperties": false,
+        "properties": {
+          "average": {
+            "title": "Average",
+            "type": "number"
+          },
+          "question": {
+            "title": "Question",
+            "type": "string"
+          },
+          "question_id": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Question Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "question_id",
+          "question",
+          "average"
+        ],
+        "title": "AnswerHighlight",
+        "type": "object"
+      },
+      "AnswerRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "answer_text": {
+            "maxLength": 3000,
+            "minLength": 1,
+            "title": "Answer Text",
+            "type": "string"
+          },
+          "question_id": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Question Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "question_id",
+          "answer_text"
+        ],
+        "title": "AnswerRequest",
+        "type": "object"
+      },
       "Body_analyze_pdf_api_analyze_pdf_post": {
         "properties": {
           "job_description": {
@@ -187,6 +315,94 @@
         "title": "CompetencyScore",
         "type": "object"
       },
+      "CriterionAverage": {
+        "additionalProperties": false,
+        "properties": {
+          "answers_scored": {
+            "title": "Answers Scored",
+            "type": "integer"
+          },
+          "average": {
+            "title": "Average",
+            "type": "number"
+          },
+          "criterion": {
+            "enum": [
+              "relevance",
+              "specificity",
+              "structure",
+              "impact",
+              "accuracy"
+            ],
+            "title": "Criterion",
+            "type": "string"
+          },
+          "max": {
+            "const": 4,
+            "default": 4,
+            "title": "Max",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "criterion",
+          "average",
+          "answers_scored"
+        ],
+        "title": "CriterionAverage",
+        "type": "object"
+      },
+      "CriterionScore": {
+        "additionalProperties": false,
+        "properties": {
+          "answer_quote": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Answer Quote"
+          },
+          "comment": {
+            "title": "Comment",
+            "type": "string"
+          },
+          "criterion": {
+            "enum": [
+              "relevance",
+              "specificity",
+              "structure",
+              "impact",
+              "accuracy"
+            ],
+            "title": "Criterion",
+            "type": "string"
+          },
+          "max": {
+            "const": 4,
+            "default": 4,
+            "title": "Max",
+            "type": "integer"
+          },
+          "score": {
+            "maximum": 4.0,
+            "minimum": 1.0,
+            "title": "Score",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "criterion",
+          "score",
+          "comment",
+          "answer_quote"
+        ],
+        "title": "CriterionScore",
+        "type": "object"
+      },
       "DemoFixtureResponse": {
         "additionalProperties": false,
         "properties": {
@@ -241,6 +457,193 @@
           "status"
         ],
         "title": "HealthResponse",
+        "type": "object"
+      },
+      "InterviewQuestion": {
+        "additionalProperties": false,
+        "properties": {
+          "grounding_quote": {
+            "title": "Grounding Quote",
+            "type": "string"
+          },
+          "id": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Id",
+            "type": "string"
+          },
+          "question": {
+            "title": "Question",
+            "type": "string"
+          },
+          "requirement_id": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requirement Id"
+          },
+          "type": {
+            "enum": [
+              "behavioral",
+              "technical",
+              "gap_probe"
+            ],
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "question",
+          "requirement_id",
+          "grounding_quote"
+        ],
+        "title": "InterviewQuestion",
+        "type": "object"
+      },
+      "InterviewSummary": {
+        "additionalProperties": false,
+        "properties": {
+          "answered_count": {
+            "title": "Answered Count",
+            "type": "integer"
+          },
+          "criterion_averages": {
+            "items": {
+              "$ref": "#/components/schemas/CriterionAverage"
+            },
+            "title": "Criterion Averages",
+            "type": "array"
+          },
+          "disclaimer": {
+            "default": "Practice feedback only. This is not a hiring prediction and does not change any verified skill evidence.",
+            "title": "Disclaimer",
+            "type": "string"
+          },
+          "interview_id": {
+            "format": "uuid",
+            "title": "Interview Id",
+            "type": "string"
+          },
+          "mode": {
+            "enum": [
+              "llm",
+              "demo"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "practice_suggestions": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 3,
+            "minItems": 3,
+            "title": "Practice Suggestions",
+            "type": "array"
+          },
+          "strongest_answer": {
+            "$ref": "#/components/schemas/AnswerHighlight"
+          },
+          "total_questions": {
+            "title": "Total Questions",
+            "type": "integer"
+          },
+          "weakest_answer": {
+            "$ref": "#/components/schemas/AnswerHighlight"
+          }
+        },
+        "required": [
+          "interview_id",
+          "answered_count",
+          "total_questions",
+          "criterion_averages",
+          "strongest_answer",
+          "weakest_answer",
+          "practice_suggestions",
+          "mode"
+        ],
+        "title": "InterviewSummary",
+        "type": "object"
+      },
+      "ProjectPlan": {
+        "additionalProperties": false,
+        "properties": {
+          "deliverable": {
+            "title": "Deliverable",
+            "type": "string"
+          },
+          "id": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Id",
+            "type": "string"
+          },
+          "runnable_project_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Runnable Project Id"
+          },
+          "skill_ids": {
+            "items": {
+              "maxLength": 100,
+              "minLength": 1,
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Skill Ids",
+            "type": "array"
+          },
+          "source": {
+            "enum": [
+              "graded",
+              "template",
+              "ai_suggested"
+            ],
+            "title": "Source",
+            "type": "string"
+          },
+          "steps": {
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Steps",
+            "type": "array"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "why": {
+            "title": "Why",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "skill_ids",
+          "why",
+          "deliverable",
+          "steps",
+          "source"
+        ],
+        "title": "ProjectPlan",
         "type": "object"
       },
       "ProjectRecommendationResponse": {
@@ -450,6 +853,13 @@
             "title": "Label",
             "type": "string"
           },
+          "project_plans": {
+            "items": {
+              "$ref": "#/components/schemas/ProjectPlan"
+            },
+            "title": "Project Plans",
+            "type": "array"
+          },
           "requirement_type": {
             "$ref": "#/components/schemas/RequirementType"
           },
@@ -652,6 +1062,64 @@
           "error"
         ],
         "title": "RunResponse",
+        "type": "object"
+      },
+      "StartInterviewRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "analysis_id": {
+            "format": "uuid",
+            "title": "Analysis Id",
+            "type": "string"
+          },
+          "session_id": {
+            "format": "uuid",
+            "title": "Session Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "analysis_id"
+        ],
+        "title": "StartInterviewRequest",
+        "type": "object"
+      },
+      "StartInterviewResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "disclaimer": {
+            "default": "Practice feedback only. This is not a hiring prediction and does not change any verified skill evidence.",
+            "title": "Disclaimer",
+            "type": "string"
+          },
+          "interview_id": {
+            "format": "uuid",
+            "title": "Interview Id",
+            "type": "string"
+          },
+          "mode": {
+            "enum": [
+              "llm",
+              "demo"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "questions": {
+            "items": {
+              "$ref": "#/components/schemas/InterviewQuestion"
+            },
+            "title": "Questions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "interview_id",
+          "questions",
+          "mode"
+        ],
+        "title": "StartInterviewResponse",
         "type": "object"
       },
       "SubmitRequest": {
@@ -905,6 +1373,134 @@
           }
         },
         "summary": "Health"
+      }
+    },
+    "/api/interview/start": {
+      "post": {
+        "operationId": "start_interview_api_interview_start_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartInterviewRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StartInterviewResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Start Interview"
+      }
+    },
+    "/api/interview/{interview_id}/answer": {
+      "post": {
+        "operationId": "answer_question_api_interview__interview_id__answer_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "interview_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Interview Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnswerRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnswerFeedback"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Answer Question"
+      }
+    },
+    "/api/interview/{interview_id}/summary": {
+      "get": {
+        "operationId": "interview_summary_api_interview__interview_id__summary_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "interview_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Interview Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InterviewSummary"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Interview Summary"
       }
     },
     "/api/projects/recommended": {

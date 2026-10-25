@@ -7,15 +7,9 @@ import { AppShell } from "@/components/AppShell";
 import { StatusPill } from "@/components/StatusPill";
 import { useAppState } from "@/components/AppStateProvider";
 import { getReadiness, isMockMode } from "@/lib/api";
-import { plansForRequirements, skillLabel } from "@/lib/projectPlans";
+import { PlanCard } from "@/components/PlanCard";
+import { isEligibility, plansForRequirements, skillLabel } from "@/lib/projectPlans";
 import type { EvidenceStatus } from "@/lib/types";
-
-const skillLabels: Record<string, string> = {
-  sql_joins: "Joins",
-  sql_filtering: "Filtering",
-  sql_aggregation: "Aggregation",
-  sql_refund_edge_cases: "Refund edge cases",
-};
 
 export default function ResultsPage() {
   const { state, setState, hydrated } = useAppState();
@@ -76,11 +70,30 @@ export default function ResultsPage() {
   const roadmap = state.readiness?.roadmap ?? analysis.roadmap ?? [];
   const updatedRequirements = state.readiness?.requirements ?? analysis.requirements;
   const gapPlans = plansForRequirements(updatedRequirements);
+  const projectId = analysis.recommended_project_id;
+  const competencies = state.project?.competencies ?? ["sql_joins", "sql_filtering", "sql_aggregation", "sql_refund_edge_cases"];
+  const fallbackTasks = [{ id: "t1", title: "Connect orders to customer regions" }, { id: "t2", title: "Find gross revenue by region" }, { id: "t3", title: "Account for refunds" }];
+  const roadmapSection = roadmap.length > 0 && <section className="roadmap-band"><div><p className="eyebrow">NEXT STEPS / IN PRIORITY ORDER</p><h2>Keep building evidence.</h2></div><ol>{roadmap.slice(0, 3).map((item, index) => <li key={`${item.requirement_id}-${item.priority}`}><span className="roadmap-index">0{index + 1}</span><span>{item.action}</span></li>)}</ol></section>;
+  const plansSection = <section className="recommendation-section results-recommendations" aria-labelledby="gap-projects-title"><div className="section-heading"><div><p className="stage-kicker">GAPS TO TACKLE</p><h2 id="gap-projects-title">Concrete project ideas for what is still missing.</h2></div><span className="section-note">Choose one next</span></div>{gapPlans.length > 0 ? <div className="plan-grid">{gapPlans.map((plan) => <PlanCard key={plan.id} plan={plan} action={plan.runnable_project_id && <Link className="button button-outline" href={`/project/${plan.runnable_project_id}`}>{submittedCount ? "Retry assessment" : "Start graded assessment"} <ArrowRight size={15} /></Link>} />)}</div> : <div className="empty-result">Your assessed skills have no remaining mapped gaps. Keep this result as evidence and add another project when your target role changes.</div>}</section>;
+
+  if (!projectId) {
+    // Nothing in this posting maps to a graded project, so there is no score to show.
+    return (
+      <AppShell>
+        <section className="page-wrap results-page">
+          <div className="project-backline"><Link className="back-link" href="/readiness"><ArrowLeft size={15} /> Evidence map</Link><span className="project-step">NEXT STEPS / 04</span></div>
+          <div className="stage-header results-stage-header"><div><p className="stage-kicker">STEP 3 OF 3 · NEXT STEPS</p><h1>Your plan for {analysis.target_role}.</h1><p className="intro-copy">GapMap can&apos;t grade any skill in this posting yet, so there is no work-sample score. These projects build evidence for the gaps, biggest first.</p></div></div>
+          {roadmapSection}
+          {plansSection}
+        </section>
+      </AppShell>
+    );
+  }
 
   return (
     <AppShell>
       <section className="page-wrap results-page">
-        <div className="project-backline"><Link className="back-link" href="/project/revenue-debug-001"><ArrowLeft size={15} /> Project workspace</Link><span className="project-step">EVIDENCE UPDATE / 04</span></div>
+        <div className="project-backline"><Link className="back-link" href={`/project/${projectId}`}><ArrowLeft size={15} /> Project workspace</Link><span className="project-step">EVIDENCE UPDATE / 04</span></div>
         <div className="stage-header results-stage-header"><div><p className="stage-kicker">STEP 3 OF 3 · SKILLS UPDATE</p><h1>Your skills after the assessment.</h1><p className="intro-copy">These grades reflect this work sample only. Use the gaps below to choose your next project.</p></div><div className="score-plate"><span className="score-label">PROJECT SCORE</span><strong>{totalEarned}<span> / {tasks.length ? "100" : "—"}</span></strong><span className="score-caption">{submittedCount} of {tasks.length || 3} tasks submitted</span></div></div>
 
         {isMockMode && <div className="mock-banner"><CircleHelp size={16} /><span><b>Demo fixture results.</b> These are prewritten examples and do not grade the SQL submitted in this browser.</span></div>}
@@ -90,18 +103,18 @@ export default function ResultsPage() {
         <div className="results-grid">
           <section className="results-block task-results">
             <div className="block-title"><div><p className="eyebrow">TASK OUTCOMES</p><h2>Submission record</h2></div><span className="block-count">{submittedCount} / {tasks.length || 3}</span></div>
-            {(tasks.length ? tasks : [{ id: "t1", title: "Connect orders to customer regions" }, { id: "t2", title: "Find gross revenue by region" }, { id: "t3", title: "Account for refunds" }]).map((task) => {
+            {(tasks.length ? tasks : fallbackTasks).map((task) => {
               const result = state.submissions[task.id];
-              return <article className="outcome-row" key={task.id}><div className={`outcome-icon${result ? " has-result" : ""}`}>{result ? <Check size={15} /> : <span>—</span>}</div><div className="outcome-main"><h3>{task.title}</h3>{result ? <><p>{result.task_score.earned} / {result.task_score.possible} points · {result.task_id}</p>{result.public_test_feedback.map((feedback) => <span className={`case-label${feedback.passed ? " passed" : ""}`} key={feedback.label}>{feedback.passed ? "Passed" : "Needs work"}: {feedback.label}</span>)}</> : <p className="not-submitted">Not submitted</p>}</div><Link href={`/project/${analysis.recommended_project_id ?? "revenue-debug-001"}`} aria-label={`Review ${task.title}`}><ArrowRight size={16} /></Link></article>;
+              return <article className="outcome-row" key={task.id}><div className={`outcome-icon${result ? " has-result" : ""}`}>{result ? <Check size={15} /> : <span>—</span>}</div><div className="outcome-main"><h3>{task.title}</h3>{result ? <><p>{result.task_score.earned} / {result.task_score.possible} points · {result.task_id}</p>{result.public_test_feedback.map((feedback) => <span className={`case-label${feedback.passed ? " passed" : ""}`} key={feedback.label}>{feedback.passed ? "Passed" : "Needs work"}: {feedback.label}</span>)}</> : <p className="not-submitted">Not submitted</p>}</div><Link href={`/project/${projectId}`} aria-label={`Review ${task.title}`}><ArrowRight size={16} /></Link></article>;
             })}
             <div className="outcome-total"><span>Scored tasks total</span><strong>{totalEarned} / {totalPossible || 100}</strong></div>
           </section>
 
           <section className="results-block competency-results">
             <div className="block-title"><div><p className="stage-kicker">TESTED COMPETENCIES</p><h2>What changed</h2></div><Target size={18} /></div>
-            {["sql_joins", "sql_filtering", "sql_aggregation", "sql_refund_edge_cases"].map((skillId) => {
+            {competencies.map((skillId) => {
               const score = scoreBySkill.get(skillId);
-              return <div className="competency-row" key={skillId}><span>{skillLabels[skillId]}</span>{score ? <><span className="competency-points">{score.earned} / {score.possible}</span><StatusPill status={score.status} /></> : <span className="not-submitted">Not assessed</span>}</div>;
+              return <div className="competency-row" key={skillId}><span>{skillLabel(skillId)}</span>{score ? <><span className="competency-points">{score.earned} / {score.possible}</span><StatusPill status={score.status} /></> : <span className="not-submitted">Not assessed</span>}</div>;
             })}
             <p className="scope-note">Passing one SQL sample does not certify broader skill or predict job performance.</p>
           </section>
@@ -110,16 +123,16 @@ export default function ResultsPage() {
         <section className="evidence-trail">
           <div className="block-title"><div><p className="eyebrow">BEFORE / AFTER</p><h2>Requirement evidence trail</h2></div><Link className="subtle-link" href="/readiness">Full evidence map <ArrowRight size={14} /></Link></div>
           <div className="trail-header"><span>REQUIREMENT</span><span>BEFORE WORK SAMPLE</span><span>AFTER WORK SAMPLE</span></div>
-          {analysis.requirements.map((requirement) => {
+          {analysis.requirements.filter((requirement) => !isEligibility(requirement)).map((requirement) => {
             const after = state.readiness?.requirements.find((item) => item.id === requirement.id)?.evidence_status
               ?? statusAfter(requirement.skill_ids, requirement.evidence_status);
             return <div className="trail-row" key={requirement.id}><span className="trail-requirement">{requirement.label}</span><span><StatusPill status={requirement.evidence_status} /></span><span><StatusPill status={after} /></span></div>;
           })}
         </section>
 
-        <section className="roadmap-band"><div><p className="eyebrow">NEXT STEPS / IN PRIORITY ORDER</p><h2>Keep building evidence.</h2></div><ol>{roadmap.slice(0, 3).map((item, index) => <li key={`${item.requirement_id}-${item.priority}`}><span className="roadmap-index">0{index + 1}</span><span>{item.action}</span></li>)}</ol></section>
+        {roadmapSection}
 
-        <section className="recommendation-section results-recommendations" aria-labelledby="gap-projects-title"><div className="section-heading"><div><p className="stage-kicker">GAPS TO TACKLE</p><h2 id="gap-projects-title">Concrete project ideas for what is still missing.</h2></div><span className="section-note">Choose one next</span></div>{gapPlans.length > 0 ? <div className="plan-grid">{gapPlans.map((plan) => <article className="plan-card" key={plan.id}><span className="plan-label">SPEC PLAN · {plan.skills.map(skillLabel).join(" · ")}</span><h3>{plan.title}</h3><p>{plan.why}</p><p className="plan-deliverable"><b>Deliverable:</b> {plan.deliverable}</p><ol>{plan.steps.map((step) => <li key={step}>{step}</li>)}</ol>{plan.runnableProjectId && <Link className="button button-outline" href={`/project/${plan.runnableProjectId}`}>Retry assessment <ArrowRight size={15} /></Link>}</article>)}</div> : <div className="empty-result">Your assessed skills have no remaining mapped gaps. Keep this result as evidence and add another project when your target role changes.</div>}</section>
+        {plansSection}
       </section>
     </AppShell>
   );

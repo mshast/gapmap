@@ -95,7 +95,7 @@ def test_pdf_content_type_does_not_replace_signature_validation(client):
     assert upload(client, make_pdf(), mime="text/plain").status_code == 415
 
 
-@pytest.mark.parametrize("job", ["", " ", "x" * 50_001])
+@pytest.mark.parametrize("job", ["", " ", "x" * 50_001], ids=["empty", "blank", "too-long"])
 def test_pdf_job_text_is_validated_with_the_same_limits(client, job):
     assert upload(client, make_pdf("Built a Python reporting service."), job=job).status_code == 422
 

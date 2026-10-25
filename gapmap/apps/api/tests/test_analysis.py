@@ -178,7 +178,7 @@ async def test_no_sql_means_no_project_or_fake_verification_cta(extraction_resul
     result = await StructuredAnalysisService(extractor=FakeExtractor(extraction_result)).analyze(fixture.resume_text, job)
     assert result.recommended_project_id is None
     assert all(item.verification_capability == "not_assessable" for item in result.requirements)
-    assert all("no MVP assessment" in item.action for item in result.roadmap)
+    assert all("not graded by GapMap yet" in item.action for item in result.roadmap)
 
 
 async def test_mixed_requirement_discloses_uncovered_skill_and_stays_partial(extraction_result):
@@ -386,3 +386,43 @@ def test_extended_taxonomy_is_grounded_in_the_excerpt(text, expected):
 ])
 def test_labels_drop_dates(label, expected):
     assert clean_label(label) == expected
+
+
+async def test_each_requirement_carries_its_project_plans(extraction_result):
+    fixture = load_demo_fixture()
+    result = await DemoAnalysisService().analyze(fixture.resume_text, fixture.job_description)
+    sql, python, react = (by_skill(result, skill) for skill in ("sql_joins", "python", "react"))
+    assert [(plan.source, plan.runnable_project_id) for plan in sql.project_plans] == [("graded", "revenue-debug-001")]
+    assert [(plan.id, plan.source) for plan in python.project_plans] == [("plan-python", "template")]
+    assert react.project_plans[0].title == "Ship a React workflow"
+    assert result.roadmap[0].action.startswith("Complete the revenue debugging project")
+
+
+async def test_ai_project_idea_is_used_only_for_skills_outside_the_taxonomy():
+    extraction = general_extraction()
+    idea = {"title": "Build a code review bot", "deliverable": "A bot that comments on pull requests.",
+            "steps": ["Read the diff", "Post one comment"]}
+    data = extraction.model_dump(mode="json")
+    for item in data["requirements"]:
+        item["project_idea"] = idea
+    data["requirements"].append({
+        "label": "Kafka streams", "job_quote": "Experience with Kafka streams is a plus.",
+        "importance": 1, "requirement_type": "preferred", "skill_ids": ["other"],
+        "resume_quotes": [], "project_idea": idea,
+    })
+    job = GENERAL_JOB + "Experience with Kafka streams is a plus.\n"
+    service = StructuredAnalysisService(extractor=FakeExtractor(ExtractionResult.model_validate(data)))
+    result = await service.analyze(GENERAL_RESUME, job)
+    by_id = {item.id: item for item in result.requirements}
+    assert by_id["req-eligibility-1"].project_plans == []
+    assert [plan.source for plan in by_id["req-java"].project_plans] == ["template", "template"]
+    kafka = result.requirements[-1]
+    assert kafka.skill_ids == ["other"]
+    assert [(plan.title, plan.source) for plan in kafka.project_plans] == [("Build a code review bot", "ai_suggested")]
+    assert any(item.action.startswith("Build a code review bot to show Kafka streams") for item in result.roadmap)
+
+
+def test_missing_project_idea_defaults_to_none(extraction_result):
+    data = extraction_result.model_dump(mode="json")
+    del data["requirements"][0]["project_idea"]
+    assert ExtractionResult.model_validate(data).requirements[0].project_idea is None

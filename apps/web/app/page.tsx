@@ -2,7 +2,7 @@
 
 import { useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Check, FileText, LoaderCircle, Sparkles, Upload, X } from "lucide-react";
+import { ArrowRight, Check, CircleHelp, FileText, LoaderCircle, Sparkles, Upload, X } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { useAppState } from "@/components/AppStateProvider";
 import { analyze, analyzePdf, getDemoFixture, isMockMode } from "@/lib/api";
@@ -66,7 +66,7 @@ export default function HomePage() {
       const result = resumeFile && !isMockMode
         ? await analyzePdf(resumeFile, state.jobText)
         : await analyze(state.resumeText, state.jobText);
-      setState((current) => ({ ...current, analysis: result, project: null, readiness: null, previews: {}, submissions: {} }));
+      setState((current) => ({ ...current, analysis: result, project: null, readiness: null, previews: {}, submissions: {}, interview: null }));
       router.push("/readiness");
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "We could not analyze these inputs. Please try again.");
@@ -91,6 +91,8 @@ export default function HomePage() {
             <span>Read the role.<br />Build one useful proof.</span>
           </div>
         </div>
+
+        {isMockMode && <div className="mock-banner"><CircleHelp size={16} /><span><b>Demo mode.</b> Only the example posting can be analyzed here. Use <b>Load demo example</b>, or run the API and start the web app with <code>NEXT_PUBLIC_GAPMAP_MOCK=false</code> to analyze your own posting.</span></div>}
 
         <form className="input-grid" onSubmit={onSubmit}>
           <section className="input-panel resume-panel" aria-labelledby="resume-heading">

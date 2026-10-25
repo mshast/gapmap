@@ -515,3 +515,12 @@ async def test_failed_grounding_is_not_cached_and_cache_can_be_disabled(extracti
     for _ in range(2):
         await uncached.analyze(fixture.resume_text, fixture.job_description)
     assert uncached._extractor.calls == 2
+
+
+def test_resume_quotes_drop_list_bullets():
+    evidence = match_resume_evidence(
+        ["- Built a Python service that validates campus event data."],
+        "Projects\n- Built a Python service that validates campus event data.",
+        ["python"],
+    )
+    assert [item.quote for item in evidence] == ["Built a Python service that validates campus event data."]

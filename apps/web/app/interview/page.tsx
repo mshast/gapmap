@@ -85,6 +85,7 @@ export default function InterviewPage() {
   const answeredCount = Object.keys(interview?.feedback ?? {}).length;
   const nextQuestion = question ? questions.slice(questions.indexOf(question) + 1).find((item) => !interview?.feedback[item.id]) : undefined;
   const draft = question ? interview?.drafts[question.id] ?? "" : "";
+  const wordCount = draft.trim().split(/\s+/).filter(Boolean).length;
 
   return (
     <AppShell>
@@ -120,7 +121,7 @@ export default function InterviewPage() {
               {!feedback ? <>
                 <label className="visually-hidden" htmlFor="answer-text">Your answer</label>
                 <textarea id="answer-text" className="text-input" rows={9} maxLength={MAX_ANSWER} value={draft} placeholder="Type your answer as you would say it…" onChange={(event) => updateInterview((current) => ({ ...current, drafts: { ...current.drafts, [question.id]: event.target.value } }))} />
-                <div className="textarea-foot"><span>{draft.length.toLocaleString()} / {MAX_ANSWER.toLocaleString()}</span></div>
+                <div className="textarea-foot"><span className="star-tip">Tip: Aim for 50–150 words using STAR (Situation, Task, Action, Result)</span><span>{wordCount} {wordCount === 1 ? "word" : "words"} · {draft.length.toLocaleString()} / {MAX_ANSWER.toLocaleString()}</span></div>
                 <div className="editor-actions"><button className="button button-primary" type="button" onClick={() => submit(question)} disabled={busy !== null || !draft.trim()}>{busy === "answer" ? <><LoaderCircle className="spin" size={16} /> Scoring answer</> : <>Get feedback <ArrowRight size={16} /></>}</button></div>
               </> : <section className="submission-section" aria-label="Answer feedback">
                 <div className="preview-heading"><div><p className="eyebrow">RUBRIC FEEDBACK</p><h3>How this answer reads</h3></div></div>
